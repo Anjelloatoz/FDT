@@ -44,9 +44,14 @@ public class DrawingBoardFooter extends JFrame implements ActionListener {
         redo.setEnabled(false);
 
         undo.addActionListener(new ActionListener(){
+
             public void actionPerformed(ActionEvent ae){
                 try{
+                    System.out.println("*****Undo called*****");
                     manager.undo();
+
+                    System.out.println("*********************************");
+                    System.out.println("");
                 } catch(javax.swing.undo.CannotUndoException ex){ex.printStackTrace();}
 
                 finally{
@@ -58,7 +63,10 @@ public class DrawingBoardFooter extends JFrame implements ActionListener {
         redo.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent ae){
                 try{
+                    System.out.println("*****Redo called*****");
                     manager.redo();
+                    System.out.println("*********************************");
+                    System.out.println("");
                 } catch(javax.swing.undo.CannotRedoException ex){ex.printStackTrace();}
 
                 finally{

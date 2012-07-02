@@ -11,6 +11,7 @@ public class UndoableLocationPoint extends AbstractUndoableEdit{
     private Vector addedEdits;
     public UndoableLocationPoint(String name){
         location_name = name;
+        System.out.println("Came into the UndoableLocationPoint");
     }
 
     public String getPresentationName(){

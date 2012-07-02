@@ -21,7 +21,6 @@ public class UndoableAddLocationCoordinates extends AbstractUndoableEdit{
     java.util.List<Element> location_coordinates_list;
     JSVGCanvas canvas;
     public UndoableAddLocationCoordinates(SVGConjurer svgc, Element coord_X, Element coord_Y){
-//        System.out.println("UndoableAddLocationCoordinates called");
         location_name = "";
         this.svgc = svgc;
         this.coord_x = coord_X;
@@ -30,6 +29,7 @@ public class UndoableAddLocationCoordinates extends AbstractUndoableEdit{
         this.axis_Y = svgc.axis_Y;
         this.location_coordinates_list = svgc.location_coordinates_list;
         this.canvas = svgc.canvas;
+        System.out.println("Came into the UndoableAddLocationCoordinates");
 
         Runnable r = new Runnable(){
             public void run(){                
@@ -50,7 +50,6 @@ public class UndoableAddLocationCoordinates extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
-        System.out.println("Came into the UndoableAddLocationCoordinates redo");
 
         Runnable r = new Runnable(){
             public void run(){
@@ -67,7 +66,7 @@ public class UndoableAddLocationCoordinates extends AbstractUndoableEdit{
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("Came into the UndoableAddLocationCoordinates undo");
+        System.out.println("    UNDO-UndoableAddLocationCoordinates");
         Runnable r = new Runnable(){
             public void run(){
                 axis_X.getParentNode().removeChild(coord_x);
@@ -79,6 +78,7 @@ public class UndoableAddLocationCoordinates extends AbstractUndoableEdit{
         };
         UpdateManager um = canvas.getUpdateManager();
 	um.getUpdateRunnableQueue().invokeLater(r);
+        System.out.println("current_drawing_locations: "+svgc.current_drawing_locations.size());
     }
 
     public boolean addEdit(UndoableEdit anEdit){

@@ -33,6 +33,7 @@ public class UndoableAddLine extends AbstractUndoableEdit{
         this.prev_drawing_in_progress = svgc.drawing_in_progress;
         this.document = svgc.document;
         this.canvas = svgc.canvas;
+        System.out.println("Came into the UndoableAddLine");
 
         Runnable r = new Runnable(){
             public void run(){
@@ -59,7 +60,6 @@ public class UndoableAddLine extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
-        System.out.println("Came into the AddLine redo");
         Runnable r = new Runnable(){
             public void run(){
                 Element root = document.getDocumentElement();
@@ -75,7 +75,6 @@ public class UndoableAddLine extends AbstractUndoableEdit{
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("Came into the AddLine undo");
         Runnable r = new Runnable(){
             public void run(){
                 Element root = document.getDocumentElement();
