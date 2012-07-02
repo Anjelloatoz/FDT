@@ -12,7 +12,6 @@ import javax.swing.JScrollPane;
 
 import java.awt.Point;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 import java.awt.dnd.DragSourceListener;
 import java.awt.dnd.DropTargetListener;
@@ -37,9 +36,6 @@ import java.io.IOException;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 
-import java.lang.NullPointerException;
-import org.w3c.dom.DOMException;
-
 public class DnDJTree extends JTree implements DragSourceListener, DropTargetListener, DragGestureListener {
     static DataFlavor localObjectFlavor;
     static{
@@ -56,15 +52,11 @@ public class DnDJTree extends JTree implements DragSourceListener, DropTargetLis
 
     TreeNode dropTargetNode = null;
     TreeNode draggedNode = null;
-    SVGConjurer svgF;
-    SVGConjurer svgR;
-    ribbonTest rt;
+    SVGConjurer svgc;
 
-    public DnDJTree(ribbonTest rt){
+    public DnDJTree(SVGConjurer svgc){
         super();
-        this.svgF = rt.svgF;
-        this.svgR = rt.svgR;
-        this.rt = rt;
+        this.svgc = svgc;
         setCellRenderer(new DefaultTreeCellRenderer());
         setModel(new DefaultTreeModel(new DefaultMutableTreeNode("Default")));
         dragSource = new DragSource();
@@ -83,6 +75,7 @@ public class DnDJTree extends JTree implements DragSourceListener, DropTargetLis
         }
 
         draggedNode = (TreeNode)path.getLastPathComponent();
+        System.out.println("The dragging node is: "+draggedNode.toString());
 
         if(draggedNode.toString().equals("Pattern History")){
             System.out.println("**** Returning....");
@@ -102,7 +95,7 @@ public class DnDJTree extends JTree implements DragSourceListener, DropTargetLis
             return;
         }
         catch(Exception e){
-            System.out.println("Exception: DnDJTree dragGestureRecognized e"+e);
+            System.out.println("Not a pattern object"+e);
         }
         try{
             DefaultMutableTreeNode node = (DefaultMutableTreeNode)draggedNode;
@@ -152,98 +145,60 @@ public class DnDJTree extends JTree implements DragSourceListener, DropTargetLis
     }
 
     public void drop(DropTargetDropEvent dtde){
-        System.out.println("DROP PATH: In the drop begining.");
+        System.out.println("drop()!");
         Point dropPoint = dtde.getLocation();
         TreePath path = getPathForLocation(dropPoint.x, dropPoint.y);
+        System.out.println("Drop path is "+path);
         if(path == null)return;
-
         boolean dropped = false;
+System.out.println("In the DROP The dragging node is: "+draggedNode.toString());
         DefaultMutableTreeNode station = (DefaultMutableTreeNode)path.getLastPathComponent();
         DefaultMutableTreeNode guest = (DefaultMutableTreeNode)draggedNode;
+        System.out.println("Station is: "+station);
+        System.out.println("Guest is: "+guest);
 
         Element station_element = (Element)station.getUserObject();
         Element guest_element = (Element)guest.getUserObject();
         Boolean copy = false;
-        Element new_object = null;
 
         try{
-            System.out.println("DROP PATH: In the first try clause.");
-            System.out.println("The station element is: "+station_element.getLocalName());
-            System.out.println("The guest element is: "+guest_element.getLocalName());
-            System.out.println("The station element name is: "+station_element.getAttribute("id"));
-            System.out.println("The guest element name is: "+guest_element.getAttribute("id"));
+            System.out.println("The station element is:: "+station_element.getLocalName());
+            System.out.println("The guest element is:: "+guest_element.getLocalName());
+            System.out.println("The station element name is:: "+station_element.getAttribute("id"));
+            System.out.println("The guest element name is:: "+guest_element.getAttribute("id"));
+
 
             if(station_element.getLocalName().equals("svg")&& guest_element.getLocalName().equals("path")){
-                System.out.println("The first option");
-                new_object = guest_element;
-
-                station_element.appendChild(guest_element.getParentNode().getParentNode());
+                station_element.appendChild(guest_element.getParentNode());
             }
             else if(station_element.getLocalName().equals("path")&& guest_element.getLocalName().equals("path")){
-                System.out.println("The second option");
-                new_object = guest_element;
-                station_element.getParentNode().appendChild(guest_element.getParentNode().getParentNode());
+                station_element.getParentNode().appendChild(guest_element.getParentNode());
             }
             else if(station_element.getLocalName().equals("svg")&& guest_element.getLocalName().equals("svg")){
-                System.out.println("The third option");
                 station_element.appendChild(guest_element.getParentNode());
             }
             dtde.acceptDrop(DnDConstants.ACTION_MOVE);
-            System.out.println("Finished the Try clause.");
         }
-        catch(NullPointerException npe){
-            System.out.println("DROP PATH: Came into the catch clause with null pointer exception");
-            System.out.println("Exception: DnDJTree Drop e2: "+npe);
+        catch(Exception e1){
+            System.out.println("Element adding error: "+e1);
             Element copy_layer = (Element)guest_element.cloneNode(true);
             copy_layer.setAttribute("id", "copy_"+guest_element.getAttribute("id"));
             copy_layer.setAttributeNS (null, "stroke", "red");
-            new_object = copy_layer;
-            try{
-                ElementLocalizer el = new ElementLocalizer(station_element, copy_layer, svgF, svgR);
-                station_element.appendChild(el.container);
-                new_object = (Element)el.container.getFirstChild().getFirstChild();
-                rt.selectedSVGC.registerPatternListeners((Element)el.container.getFirstChild().getFirstChild());
-                System.out.println("And now the last child of the station, "+station_element.getAttribute("id")+" is"+((Element)station_element.getLastChild()).getAttribute("id"));
-            }
-            catch(Exception ex1){
-                System.out.println("195 Element drag error:"+ex1);
-            }
+            station_element.appendChild(svgc.createNewLayer(copy_layer));
             copy = true;
-            System.out.println("DROP PATH: ***** Copy flag set to true.");
             dtde.acceptDrop(DnDConstants.ACTION_COPY);
-        }
-        catch(DOMException dome){
-            System.out.println("DROP PATH: Came into Exception with DOM");
-            ElementLocalizer el = new ElementLocalizer(station_element, (Element)guest_element.getParentNode().getParentNode(), svgF, svgR);
-            station_element.appendChild(el.container);
-            NodeList nl = el.container.getElementsByTagName("path");
-            new_object = (Element)nl.item(0);
-            rt.selectedSVGC.registerPatternListeners((Element)nl.item(0));
-            guest_element.getParentNode().getParentNode().getParentNode().removeChild(guest_element.getParentNode().getParentNode());
-            System.out.println("Move operation completed");
         }
 
         try{
-            System.out.println("DROP PATH: Came into the object copying try clause");
+//            dtde.acceptDrop(DnDConstants.ACTION_MOVE);
+            System.out.println("Accepted");
             Object droppedObject = dtde.getTransferable().getTransferData(localObjectFlavor);
-            if(copy){
-                System.out.println("DROP PATH: ****** copy flag is true.");
-                droppedObject = new_object;
-            }
-            droppedObject = new_object;
             MutableTreeNode droppedNode = null;
-            if(!copy){
-                    System.out.println("DROP PATH: In the !copy clause.");
-                    ((DefaultTreeModel)getModel()).removeNodeFromParent(guest);
-                }
             if(droppedObject instanceof MutableTreeNode){
                 droppedNode = (MutableTreeNode)droppedObject;
-                System.out.println("Before copy check");
                 if(!copy){
-                    System.out.println("DROP PATH: In the !copy clause.");
                     ((DefaultTreeModel)getModel()).removeNodeFromParent(droppedNode);
                 }
-                System.out.println("After copy check");
             }
             else{
                 droppedNode = new DefaultMutableTreeNode(droppedObject);
@@ -251,11 +206,16 @@ public class DnDJTree extends JTree implements DragSourceListener, DropTargetLis
 
             DefaultMutableTreeNode dropNode = (DefaultMutableTreeNode)path.getLastPathComponent();
 
-            dropNode.setAllowsChildren(true);
-            ((DefaultTreeModel)getModel()).insertNodeInto(droppedNode, dropNode, dropNode.getChildCount());
+//            if(dropNode.isLeaf()){
+//                DefaultMutableTreeNode parent = (DefaultMutableTreeNode)dropNode.getParent();
+//                int index = parent.getIndex(dropNode);
+//                ((DefaultTreeModel)getModel()).insertNodeInto(droppedNode, parent, index);
+//            }
+//            else{
+                ((DefaultTreeModel)getModel()).insertNodeInto(droppedNode, dropNode, dropNode.getChildCount());
+//            }
+
             dropped = true;
-            svgF.refresh();
-            svgR.refresh();
         }
 
         catch(Exception e){
@@ -263,7 +223,6 @@ public class DnDJTree extends JTree implements DragSourceListener, DropTargetLis
         }
         dtde.dropComplete(dropped);
     }
-
     public void dropActionChanged(DropTargetDragEvent dtde){}
 
     public class RJLTransferable implements Transferable{

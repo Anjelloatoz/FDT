@@ -638,47 +638,13 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         public void finishDrawing(final Element destination, final Element current_drawing){
-            java.awt.Shape test_shape = null;
-
-            try{
-                test_shape = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(current_drawing.getAttributeNS(null,"d")), new GeneralPath().WIND_EVEN_ODD);
-            }
-            catch(Exception e){
-                System.out.println("Test Exception");
-            }
-            java.awt.geom.AffineTransform at = new java.awt.geom.AffineTransform();
-            at.scale(-1, 1);
-            java.awt.Shape mirrored_shape = at.createTransformedShape(test_shape);
-
-            String test_d = "";
-            PathIterator pi = mirrored_shape.getPathIterator(null);
-                        double[] split_path_coords = new double[6];
-
-                        while(!pi.isDone()){
-                            int segment = pi.currentSegment(split_path_coords);
-                            if(segment == pi.SEG_MOVETO){
-                                test_d = "M "+split_path_coords[0]+" "+split_path_coords[1];
-                            }
-                            if(segment == pi.SEG_LINETO){
-                                test_d = test_d+" L "+split_path_coords[0]+" "+split_path_coords[1];
-                            }
-                            if(segment == pi.SEG_CUBICTO){
-                                test_d = test_d+" C "+split_path_coords[0]+" "+split_path_coords[1]+" "+split_path_coords[2]+" "+split_path_coords[3]+" "+split_path_coords[4]+" "+split_path_coords[5];
-                            }
-                            pi.next();
-                        }
-//                        System.out.println("The Mirrored shape is : "+test_d);
-
 
                   Element root = document.getDocumentElement();
                   try{
                       usa = new UndoableSetAttribute(this, current_drawing, "d", current_drawing.getAttributeNS(null, "d")+" Z");
                       compound_edit.addEdit(usa);
                   }
-
-                  catch(Exception e){
-                      return;
-                  }
+                  catch(Exception e){return;}
 
                   Element svg_element = document.createElementNS(svgNS, "svg");
                   svg_element.setAttribute("id", "svg_"+current_drawing.getAttribute("id"));
@@ -689,10 +655,13 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                   compound_edit.addEdit(uac);
 
                   if(destination_container == null){
-                      uac = new UndoableAppendChild(this, root, svg_element);
-                      compound_edit.addEdit(uac);
+                      
                       patternObject po = new patternObject();
-                      po.front = svg_element;
+                      po.front = document.createElementNS(svgNS, "svg");
+                      po.front.appendChild(svg_element);
+                      uac = new UndoableAppendChild(this, root, po.front);
+                      System.out.println("So far so good.");
+                      compound_edit.addEdit(uac);
 
                       uapo = new UndoableAddPatternObject(po, project_object, th, rt);
                       compound_edit.addEdit(uapo);
@@ -700,7 +669,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                   }
 
                   else{
-                      uac = new UndoableAppendChild(this, destination_container, svg_element);
+                      uac = new UndoableAppendChild(this, (Element)destination_container.getParentNode(), svg_element);
                       compound_edit.addEdit(uac);
                       th.refreshTree(project_object, rt);
                   }
@@ -754,9 +723,20 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             th.refreshTree(project_object, rt);
         }
 
+        public Element createNewLayer(Element element){
+            registerPatternListeners(element);
+            Element container = document.createElementNS(svgNS, "svg");
+            container.setAttribute("id", element.getAttribute("id")+"_container");
+            container.appendChild(element);
+            this.refresh();
+            return container;
+        }
+
         public void addNewPattern(){
+            Element root = document.getDocumentElement();
             patternObject po = new patternObject();
-            po.front = document.createElement("svg");
+            po.front = document.createElementNS(svgNS, "svg");
+            root.appendChild(po.front);
             uapo = new UndoableAddPatternObject(po, project_object, th, rt);
             compound_edit.addEdit(uapo);
             th.refreshTree(project_object, rt);
@@ -2436,6 +2416,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             SVGDocument svgDoc = canvas.getSVGDocument();
             DOMUtilities.writeDocument (document, writer);
             writer.close();
+            System.out.println("File written");
         }
         catch(Exception e){
             System.err.println ("IO problem: " + e.toString () );

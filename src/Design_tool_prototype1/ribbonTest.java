@@ -12,6 +12,7 @@ import java.awt.SplashScreen;
 import java.awt.geom.Rectangle2D;
 
 import javax.swing.filechooser.FileFilter;
+import javax.swing.plaf.metal.MetalTreeUI;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.awt.Toolkit;
