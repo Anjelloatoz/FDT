@@ -107,8 +107,9 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     DefaultDockable control_dock = new DefaultDockable();
     DefaultDockable tool_dock = new DefaultDockable();
 
-    JCommandToggleButton[] buttons;
+    JCommandToggleButton[] fabric_buttons;
     JCommandToggleButton[] button_buttons;
+    JCommandToggleButton[] pattern_buttons;
     JFrame frame;
     JButton line_bt;
     paintBoard pb;
@@ -123,13 +124,16 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     JRibbonGallery gallery;
     final static String GALLERY_NAME = "Gallery";
     final static String BUTTON_GALLERY_NAME = "Button Gallery";
-    JRibbonBand band;
+
+    JRibbonBand texture_gallery_band;
     JRibbonBand button_gallery_band;
     JRibbonBand dress_form_band;
     JRibbonBand button_band;
     JRibbonBand button_button_band;
     JRibbonBand dress_form_button_band;
     JRibbonBand buttons_button_band;
+    JRibbonBand pattern_controls_band;
+    JRibbonBand pattern_gallery_band;
 
     private DrawingBoardRule columnView;
     private DrawingBoardRule rowView;
@@ -139,6 +143,7 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     Image image;
     java.util.List<Fabric> fabrics_list = new ArrayList<Fabric>();
     java.util.List<Fabric> buttons_list = new ArrayList<Fabric>();
+    java.util.List<patternPackage> pattern_list = new ArrayList<patternPackage>();
 
     Container navigator_container;
 
@@ -233,6 +238,17 @@ increaseSplash();
         catch(Exception e){
             System.out.println("Buttons list import error "+e);
         }
+
+        try{
+            ObjectInputStream objIn = new ObjectInputStream(new BufferedInputStream(new FileInputStream("patterns.dat")));
+            pattern_list = (ArrayList)(objIn.readObject());
+            objIn.close();
+        }
+        catch(Exception e){
+            System.out.println("Pattern list import error "+e);
+        }
+
+
 increaseSplash();
         amEntryNew = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "New Project", this, CommandButtonKind.ACTION_ONLY);
         amEntryOpen = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "Open Project", this, CommandButtonKind.ACTION_ONLY);
@@ -268,11 +284,12 @@ increaseSplash();
         });
 increaseSplash();
         this.getRibbon().setApplicationMenu(applicationMenu);
-        buttons = new JCommandToggleButton[fabrics_list.size()];
+        fabric_buttons = new JCommandToggleButton[fabrics_list.size()];
         button_buttons = new JCommandToggleButton[buttons_list.size()];
+        pattern_buttons = new JCommandToggleButton[pattern_list.size()];
 increaseSplash();
 splashText("Populating fabrics library");
-for(int j = 0; j < fabrics_list.size(); j++){
+        for(int j = 0; j < fabrics_list.size(); j++){
             try{
 //                File image_file = new File(fabrics_list.get(j).getFabricIcon());
 //                image = ImageIO.read(image_file);
@@ -288,7 +305,7 @@ increaseSplash();
             jtb.setName("fabric");
 increaseSplash();
             jtb.addActionListener(this);
-            this.buttons[j] = jtb;
+            this.fabric_buttons[j] = jtb;
         }
 increaseSplash();
 splashText("Populating buttons library");
@@ -312,8 +329,32 @@ increaseSplash();
             button_tb.addActionListener(this);
             this.button_buttons[j] = button_tb;
         }
+
 increaseSplash();
-        band = new JRibbonBand("Texture Gallery", new EmptyResizableIcon(32));
+splashText("Populating patternss library");
+        for(int j = 0; j < pattern_list.size(); j++){
+            try{
+//                File image_file = new File(fabrics_list.get(j).getFabricIcon());
+//                image = ImageIO.read(image_file);
+                image = pattern_list.get(j).getPatternFrontImage();
+            }
+
+            catch(Exception e){
+                System.out.println("RibbonTest()Constructor - Pattern ImageIO problem: "+e);
+            }
+
+            DecoratedResizableIcon dri = new DecoratedResizableIcon(new DisabledResizableIcon(RibbonElementPriority.TOP, 52, 52), new IconImageDecoration(image), new BottomRightDecoration(j));
+            JCommandToggleButton jtb  = new JCommandToggleButton("Pattern "  + j, dri);
+            jtb.setName("pattern");
+increaseSplash();
+            jtb.addActionListener(this);
+            this.pattern_buttons[j] = jtb;
+        }/***    End of patterns populating.   ***/
+
+increaseSplash();
+        texture_gallery_band = new JRibbonBand("Texture Gallery", new EmptyResizableIcon(32));
+        pattern_gallery_band = new JRibbonBand("Pattern Gallery", new EmptyResizableIcon(32));
+        pattern_controls_band = new JRibbonBand("Pattern Controls", new EmptyResizableIcon(32));
         button_band = new JRibbonBand("Import", new EmptyResizableIcon(32));
         dress_form_button_band = new JRibbonBand("Dress Form Controls", new EmptyResizableIcon(32));
         buttons_button_band = new JRibbonBand("Button Controls", new EmptyResizableIcon(32));
@@ -330,7 +371,7 @@ increaseSplash();
 	java.util.List<JCommandToggleButton> galleryButtonsList = new ArrayList<JCommandToggleButton>();
 increaseSplash();
         for (int j = 0; j < fabrics_list.size(); j++){
-            galleryButtonsList.add(this.buttons[j]);
+            galleryButtonsList.add(this.fabric_buttons[j]);
         }
 increaseSplash();
         java.util.List<StringValuePair<java.util.List<JCommandToggleButton>>> button_galleryButtons = new ArrayList<StringValuePair<java.util.List<JCommandToggleButton>>>();
@@ -340,8 +381,16 @@ increaseSplash();
             button_galleryButtonsList.add(this.button_buttons[j]);
         }
 increaseSplash();
+
+        java.util.List<StringValuePair<java.util.List<JCommandToggleButton>>> pattern_gallery_Buttons = new ArrayList<StringValuePair<java.util.List<JCommandToggleButton>>>();
+	java.util.List<JCommandToggleButton> pattern_gallery_Buttons_List = new ArrayList<JCommandToggleButton>();
+
+        for (int j = 0; j < pattern_list.size(); j++){
+            pattern_gallery_Buttons_List.add(this.pattern_buttons[j]);
+        }
+
         galleryButtons.add(new StringValuePair<java.util.List<JCommandToggleButton>>("Group " , galleryButtonsList));
-        band.addRibbonGallery(GALLERY_NAME, galleryButtons, visibleButtonCounts, 6, 4, RibbonElementPriority.TOP);
+        texture_gallery_band.addRibbonGallery(GALLERY_NAME, galleryButtons, visibleButtonCounts, 6, 4, RibbonElementPriority.TOP);
 increaseSplash();
         button_galleryButtons.add(new StringValuePair<java.util.List<JCommandToggleButton>>("Button Group" , button_galleryButtonsList));
         button_gallery_band.addRibbonGallery(BUTTON_GALLERY_NAME, button_galleryButtons, visibleButtonCounts, 6, 4, RibbonElementPriority.TOP);
@@ -360,7 +409,7 @@ increaseSplash();
 increaseSplash();
         button_band.addCommandButton(new JCommandButton("Import", new EmptyResizableIcon(32)),
         RibbonElementPriority.MEDIUM);
-        button_band.setResizePolicies(CoreRibbonResizePolicies.getCorePoliciesRestrictive(band));
+        button_band.setResizePolicies(CoreRibbonResizePolicies.getCorePoliciesRestrictive(texture_gallery_band));
 increaseSplash();
         JCommandButton import_img = new JCommandButton("Import Guide Image", new EmptyResizableIcon(32));
         import_img.addActionListener(this);
@@ -376,15 +425,15 @@ increaseSplash();
         dress_form_button_band.addCommandButton(new JCommandButton("test3", new EmptyResizableIcon(32)),
         RibbonElementPriority.MEDIUM);
 increaseSplash();
-        dress_form_button_band.setResizePolicies(CoreRibbonResizePolicies.getCorePoliciesRestrictive(band));
-        buttons_button_band.setResizePolicies(CoreRibbonResizePolicies.getCorePoliciesRestrictive(band));
+        dress_form_button_band.setResizePolicies(CoreRibbonResizePolicies.getCorePoliciesRestrictive(texture_gallery_band));
+        buttons_button_band.setResizePolicies(CoreRibbonResizePolicies.getCorePoliciesRestrictive(texture_gallery_band));
 increaseSplash();
 //        JCommandButton import_button = new JCommandButton("Import Button", new EmptyResizableIcon(32));
 //        import_img.addActionListener(this);
         buttons_button_band.addCommandButton(import_button, RibbonElementPriority.MEDIUM);
 increaseSplash();
-        gallery = band.getControlPanel().getRibbonGallery(GALLERY_NAME);
-        this.getRibbon().addTask(new RibbonTask("Texture", button_band, band));
+        gallery = texture_gallery_band.getControlPanel().getRibbonGallery(GALLERY_NAME);
+        this.getRibbon().addTask(new RibbonTask("Texture", button_band, texture_gallery_band));
 increaseSplash();
         this.getRibbon().addTask(new RibbonTask("Dress Form", dress_form_button_band));
         this.getRibbon().addTask(new RibbonTask("Buttons", buttons_button_band, button_gallery_band));
@@ -726,7 +775,7 @@ increaseSplash();
         JCommandToggleButton jtb  = new JCommandToggleButton("Texture "  + fabrics_list.size(), dri);
         jtb.setName("fabric");
         jtb.addActionListener(this);
-        band.addRibbonGalleryButtons(GALLERY_NAME, "Group ", jtb);
+        texture_gallery_band.addRibbonGalleryButtons(GALLERY_NAME, "Group ", jtb);
     }
 
     public void addButton(Fabric button){
@@ -804,18 +853,6 @@ FileFilter projectfilter = new FileNameExtensionFilter("Temporary project format
         System.out.println("Project read Exception: "+ e);
     }
 
-    for(int i = 0; i < p.fills.size(); i++){
-        System.out.println(i+"I: "+p.fills.get(i));
-        inner: for(int j = 0; j < fabrics_list.size(); j++){
-            System.out.println(i+"J: "+fabrics_list.get(j).getFabricNameLong());
-            if(fabrics_list.get(j).getFabricNameLong().equals(p.fills.get(i))){
-                ImageRelations2 ir = new ImageRelations2(fabrics_list.get(j).getFabricMainImage(), fabrics_list.get(j).getFabricNameLong());
-                System.out.println(p.fills.get(i)+" written");
-                break inner;
-            }
-        }
-    }
-
     Element root = svgF.document.getDocumentElement();
     Node defs = null;
     try {
@@ -836,24 +873,44 @@ FileFilter projectfilter = new FileNameExtensionFilter("Temporary project format
     catch(Exception ee){
         System.out.append("ee error: "+ee);
     }
+    System.out.println("The size of patterns is: "+p.patterns.size());
+for(int i = 0; i < p.patterns.size(); i++){
+    System.out.println("Pattern "+i+": "+p.patterns.get(i).pattern_name);
+    for(int j = 0; j < p.patterns.get(i).fills.size(); j++){
+        System.out.println("Fill of "+p.patterns.get(i).pattern_name+p.patterns.get(i).fills.get(j));
+        inner: for(int x = 0; x < fabrics_list.size(); x++){
+            System.out.println("Fabric"+i+fabrics_list.get(x).getFabricNameLong());
+            if(fabrics_list.get(x).getFabricNameLong().equals(p.patterns.get(i).fills.get(j))){
+                ImageRelations2 ir = new ImageRelations2(fabrics_list.get(x).getFabricMainImage(), fabrics_list.get(x).getFabricNameLong());
+                System.out.println(p.patterns.get(i).fills.get(j)+" written");
+                break inner;
+            }
+        }
+    }
+}
 
     for(int i = 0; i < p.patterns.size(); i++){
+        
         patternObject ptrn = new patternObject();
         ptrn.pattern_name = p.patterns.get(i).pattern_name;
         String parser = XMLResourceDescriptor.getXMLParserClassName();
         SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parser);
 
         try {
-            System.out.println("p.patterns.get(i).front is: "+p.patterns.get(i).front);
-            Node ef = DOMUtilities.parseXML(p.patterns.get(i).front, svgF.document,svgF.canvas.getURI(), null, null,f);
-
+            Node ef = null;
+            try{
+            ef = DOMUtilities.parseXML(p.patterns.get(i).front, svgF.document,svgF.canvas.getURI(), null, null,f);
+            }
+            catch(Exception ee){
+                System.out.println("Read exception is: "+ee);
+            }
             Element el = svgF.document.createElement("svg");
             el.appendChild(ef);
 
             ptrn.front = el;
             Element element1 = (Element)ptrn.front.getFirstChild();
             ptrn.front = null;
-            ptrn.front = element1;            
+            ptrn.front = element1;
 
             root.appendChild(ptrn.front);
             svgF.elementIterator(ptrn.front);
@@ -870,7 +927,6 @@ FileFilter projectfilter = new FileNameExtensionFilter("Temporary project format
             System.out.println("The exception: "+e);
         }
     }
-
     treeHandler th = new treeHandler(project_obj, this, svgF);
 
     navigator_container = navigator_dock.getContentPane();
@@ -884,15 +940,21 @@ FileFilter projectfilter = new FileNameExtensionFilter("Temporary project format
 
 public void projectWriter(projectObject po){
     project p = new project();
-    for(int i = 0; i < po.associated_fabrics.size(); i++){
+    
+    
+
+    for(int i = 0; i < po.patterns.size(); i++){
+        pattern pt = new pattern();
+
+        for(int j = 0; j < po.patterns.get(i).associated_fabrics.size(); j++){
         try{
 //            System.out.println(po.associated_fabrics.get(i).fill_uri);
-            File f = new File(new URI(po.associated_fabrics.get(i).fill_uri));
+            File f = new File(new URI(po.patterns.get(i).associated_fabrics.get(j).fill_uri));
 
             for(int x = 0; x < fabrics_list.size(); x++){
                 if(fabrics_list.get(x).getFabricNameLong().equals(f.getAbsoluteFile().getName())){
                     System.out.println("Relevant fabric found at index: "+x);
-                    p.fills.add(fabrics_list.get(x).getFabricNameLong());
+                    pt.fills.add(fabrics_list.get(x).getFabricNameLong());
                 }
             }
         }
@@ -900,16 +962,12 @@ public void projectWriter(projectObject po){
             System.out.println("The exception in ribbon test");
         }
     }
-    
-    
-    CharArrayWriter tmp_character_array = new CharArrayWriter();
-
-    for(int i = 0; i < po.patterns.size(); i++){
-        pattern pt = new pattern();
+        CharArrayWriter tmp_character_array = new CharArrayWriter();
         pt.pattern_name = po.patterns.get(i).pattern_name;
         try{
             DOMUtilities.writeNode(po.patterns.get(i).front, tmp_character_array);
             pt.front = tmp_character_array.toString();
+            System.out.println("pt.front: "+pt.front);
         }
 
         catch(Exception e){

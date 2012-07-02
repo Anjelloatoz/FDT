@@ -62,6 +62,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import java.io.CharArrayWriter;
 
 public class SVGConjurer extends JFrame implements ChangeListener, MouseListener, MouseMotionListener, KeyListener {
 	static final long serialVersionUID = 333333;
@@ -81,6 +82,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 	JSVGCanvas canvas;
 	Document document;
 	public Element selected_shape;
+        patternObject associated_pattern;
         private Element selected_component;
         private Element selected_drag_point;
         private Element selected_point;
@@ -1590,8 +1592,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                         System.out.println("pattern_defs could ot be added to the root.");
                     }
 
-                    project_object.seekPatternByElement(selected_shape);
-
+                    associated_pattern = project_object.seekPatternByElement(selected_shape);
                   
                   if(fill_defs == null){
                       fill_defs = document.createElementNS(svgNS, "defs");
@@ -1608,14 +1609,14 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                        fill_defs.removeChild(document.getElementById("pattern_"+selected_shape.getAttribute("id")));
                   }
 
-                  for_loop:{ for(int i = 0; i < project_object.associated_fabrics.size(); i++){
-                      if(((Element_fill)project_object.associated_fabrics.get(i)).element.getAttribute("id").equals(selected_shape.getAttribute("id"))){
-                          ((Element_fill)project_object.associated_fabrics.get(i)).fill_uri = fillUri;
+                  for_loop:{ for(int i = 0; i < associated_pattern.associated_fabrics.size(); i++){
+                      if(((Element_fill)associated_pattern.associated_fabrics.get(i)).element.getAttribute("id").equals(selected_shape.getAttribute("id"))){
+                          ((Element_fill)associated_pattern.associated_fabrics.get(i)).fill_uri = fillUri;
                           break for_loop;
                       }
                   }
                   Element_fill ef = new Element_fill(selected_shape, fillUri);
-                  project_object.associated_fabrics.add(ef);
+                  associated_pattern.associated_fabrics.add(ef);
                   }
 
 
@@ -1778,9 +1779,9 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 Element d = document.getElementById("pattern_"+selected_shape.getAttribute("id"));
                 d.getParentNode().removeChild(d);
                 System.out.println("Pattern successfully removed");
-                for(int i = 0; i < project_object.associated_fabrics.size(); i++){
-                    if(project_object.associated_fabrics.get(i).element.getAttribute("id").equals(selected_shape.getAttribute("id"))){
-                        project_object.associated_fabrics.remove(i);
+                for(int i = 0; i < associated_pattern.associated_fabrics.size(); i++){
+                    if(associated_pattern.associated_fabrics.get(i).element.getAttribute("id").equals(selected_shape.getAttribute("id"))){
+                        associated_pattern.associated_fabrics.remove(i);
                     }
                 }
             }
@@ -2551,6 +2552,20 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
     public void transcoder(JSVGCanvas transcode_canvas, char format){
 
+    }
+
+    public void getStringPresentation(Element e){
+        CharArrayWriter tmp_character_array = new CharArrayWriter();
+        String presentation = "";
+        try{
+            DOMUtilities.writeNode(e, tmp_character_array);
+            presentation = tmp_character_array.toString();
+            System.out.println(e.getAttribute("id")+": "+presentation);
+        }
+
+        catch(Exception ex){
+            System.out.println("patterns creation exception: "+e);
+        }
     }
 
     public void SymatricOn(){

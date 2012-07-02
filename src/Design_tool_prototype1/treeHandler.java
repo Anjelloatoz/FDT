@@ -61,6 +61,11 @@ public class treeHandler implements ActionListener, MouseListener{
         pattern_rename_item.addActionListener(this);
         pattern_object_popup.add(pattern_rename_item);
 
+        JMenuItem pattern_display_item = new JMenuItem("display", new ImageIcon("rename.gif"));
+        pattern_display_item.setActionCommand("pattern_display");
+        pattern_display_item.addActionListener(this);
+        pattern_object_popup.add(pattern_display_item);
+
         updateTree(project);
     }
 
@@ -177,6 +182,10 @@ public class treeHandler implements ActionListener, MouseListener{
                 if((new_name!=null)||(new_name!="")){
                     pattern_object.pattern_name = new_name;
                 }
+        }
+        else if(ae.getActionCommand().equals("pattern_display")){
+            System.out.println(pattern_object.pattern_name+":");
+            svgc.getStringPresentation(pattern_object.front);
         }
         else if(ae.getActionCommand().equals("drawing_duplicate")){
             Element duplicate = (Element)selected_element.cloneNode(true);
