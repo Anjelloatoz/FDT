@@ -28,7 +28,7 @@ public class UndoableSetAttribute extends AbstractUndoableEdit{
         this.old_value = element.getAttribute(atrb);
         this.new_value = value;
 //        System.out.println("Came into the UndoableSetAttribute");
-        
+
         Runnable r = new Runnable(){
           public void run(){
               element.setAttribute(atrb, new_value);

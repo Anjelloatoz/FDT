@@ -1,9 +1,13 @@
 package Design_tool_prototype1;
 
+import javax.swing.*;
 import javax.swing.undo.*;
 
 import java.util.*;
 import java.awt.geom.*;
+
+import org.apache.batik.swing.JSVGCanvas;
+import org.w3c.dom.Element;
 
 public class UndoableAddPathLocation extends AbstractUndoableEdit{
     SVGConjurer svgc;
@@ -18,18 +22,15 @@ public class UndoableAddPathLocation extends AbstractUndoableEdit{
 //        System.out.println("Came into the UndoableAddPathLocation");
     }
 
-    @Override
     public String getPresentationName(){
         return "Presentation name return";
     }
 
-    @Override
     public void redo() throws CannotRedoException{
         super.redo();
         whole_path_locations_list.add(element);
     }
 
-    @Override
     public void undo() throws CannotUndoException{
         super.undo();
   //      System.out.println("    UNDO-UndoableAddPathLocation");

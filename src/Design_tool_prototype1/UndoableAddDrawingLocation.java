@@ -1,9 +1,13 @@
 package Design_tool_prototype1;
 
+import javax.swing.*;
 import javax.swing.undo.*;
 
 import java.util.*;
 import java.awt.geom.*;
+
+import org.apache.batik.swing.JSVGCanvas;
+import org.w3c.dom.Element;
 
 public class UndoableAddDrawingLocation extends AbstractUndoableEdit{
     SVGConjurer svgc;
@@ -18,19 +22,16 @@ public class UndoableAddDrawingLocation extends AbstractUndoableEdit{
         current_drawing_locations.add(element);
     }
 
-    @Override
     public String getPresentationName(){
         return "Presentation name return";
     }
 
-    @Override
     public void redo() throws CannotRedoException{
         super.redo();
 //        System.out.println("In the UndoableAddDrawingLocation");
         current_drawing_locations.add(element);
     }
 
-    @Override
     public void undo() throws CannotUndoException{
         super.undo();
 //        System.out.println("    UNDO-UndoableAddDrawingLocation");

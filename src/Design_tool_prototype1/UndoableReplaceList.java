@@ -1,9 +1,13 @@
 package Design_tool_prototype1;
 
+import javax.swing.*;
 import javax.swing.undo.*;
 
 import java.util.*;
 import java.awt.geom.*;
+
+import org.apache.batik.swing.JSVGCanvas;
+import org.w3c.dom.Element;
 
 public class UndoableReplaceList extends AbstractUndoableEdit{
     SVGConjurer svgc;

@@ -142,8 +142,8 @@ public class App extends JRibbonFrame implements ChangeListener, ActionListener{
 			for (int j = 0; j < fabrics_list.size(); j++) {
 
                             try{
-            File image_file = new File(fabrics_list.get(j).getFabricIcon());
-            image = ImageIO.read(image_file);
+//            File image_file = new File(fabrics_list.get(j).getFabricIcon());
+//            image = ImageIO.read(image_file);
         }
         catch(Exception e){
         System.out.println("file error");
