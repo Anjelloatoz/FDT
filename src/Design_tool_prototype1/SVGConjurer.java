@@ -166,6 +166,8 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
         Element destination_container;
 
+        UndoableRemoveChildList urcl;
+
         public SVGConjurer(){
 
         }
@@ -660,7 +662,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                       po.front = document.createElementNS(svgNS, "svg");
                       po.front.appendChild(svg_element);
                       uac = new UndoableAppendChild(this, root, po.front);
-                      System.out.println("So far so good.");
                       compound_edit.addEdit(uac);
 
                       uapo = new UndoableAddPatternObject(po, project_object, th, rt);
@@ -679,21 +680,32 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                   compound_edit.addEdit(udni);
 
             p3("In the finish drawing location_list: "+location_list.size());
-            for(int i = 0; i < location_list.size(); i++){
+/*            for(int i = 0; i < location_list.size(); i++){
                 urc = new UndoableRemoveChild(this, (Element)location_list.get(i).getParentNode(), location_list.get(i));
                 compound_edit.addEdit(urc);
+            }*/
+
+            if(location_list.size()>0){
+                urcl = new UndoableRemoveChildList(this, (Element)location_list.get(0).getParentNode(), location_list);
+                compound_edit.addEdit(urcl);
+                System.out.println("The child list was emptied.");
             }
 
             p3("In the finish drawing location_coordinates_list: "+location_coordinates_list.size());
-            for(int i = 0; i < location_coordinates_list.size(); i++){
+/*            for(int i = 0; i < location_coordinates_list.size(); i++){
                 urc = new UndoableRemoveChild(this, (Element)location_coordinates_list.get(i).getParentNode(), location_coordinates_list.get(i));
                 compound_edit.addEdit(urc);
+            }*/
+            if(location_coordinates_list.size()>0){
+                urcl = new UndoableRemoveChildList(this, (Element)location_coordinates_list.get(0).getParentNode(), location_coordinates_list);
+                compound_edit.addEdit(urcl);
             }
-            ucll = new UndoableClearLocationList(location_list);
+            
+/*            ucll = new UndoableClearLocationList(location_list);
             compound_edit.addEdit(ucll);
             
             ucll = new UndoableClearLocationList(location_coordinates_list);
-            compound_edit.addEdit(ucll);
+            compound_edit.addEdit(ucll);*/
 
             usdip = new UndoableSwitchDrawingInProgress(this, false);
             compound_edit.addEdit(usdip);
@@ -1679,14 +1691,33 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         public void delete_drawing(){
+            System.out.println("Deleting_drawing is "+selected_shape.getAttribute("id"));
+            System.out.println("Deleting drawings parent is "+selected_shape.getParentNode().getLocalName());
+            System.out.println("Deleting drawings parents parent is "+selected_shape.getParentNode().getParentNode().getLocalName());
             Runnable r = new Runnable(){
                 public void run(){
-                    Element root = document.getDocumentElement();
-                    root.removeChild(selected_shape);
+//                    Element root = document.getDocumentElement();
+//                    root.removeChild(selected_shape);
+                    selected_shape.getParentNode().getParentNode().removeChild(selected_shape.getParentNode());
                 }
             };
             UpdateManager um = canvas.getUpdateManager();
 	    um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+        public void setSelectedDrawing(Element e){
+            if(!e.getLocalName().equals("path")) return;
+            if(selected_shape !=null){
+                selected_shape.setAttribute("stroke", "black");
+            }
+
+            selected_shape = e;
+            e.setAttribute("stroke", "blue");
+            selected_shape.getParentNode().getParentNode().appendChild(selected_shape.getParentNode());
+/*            Element parent = (Element)selected_shape.getParentNode().getParentNode();
+            selected_shape.getParentNode().getParentNode().removeChild(selected_shape.getParentNode());
+            parent.appendChild(selected_shape.getParentNode());*/
+
         }
 
 
@@ -1845,6 +1876,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
          Element parent = (Element)e1.getParentNode().getParentNode();
          parent.removeChild(child);
          parent.appendChild(child);
+         setSelectedDrawing(e1);
         }
       }
 

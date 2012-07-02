@@ -182,9 +182,13 @@ System.out.println("In the DROP The dragging node is: "+draggedNode.toString());
         catch(Exception e1){
             System.out.println("Element adding error: "+e1);
             Element copy_layer = (Element)guest_element.cloneNode(true);
+            System.out.println("pass 1");
             copy_layer.setAttribute("id", "copy_"+guest_element.getAttribute("id"));
+            System.out.println("pass 2");
             copy_layer.setAttributeNS (null, "stroke", "red");
+            System.out.println("pass 3");
             station_element.appendChild(svgc.createNewLayer(copy_layer));
+            System.out.println("pass 4");
             copy = true;
             dtde.acceptDrop(DnDConstants.ACTION_COPY);
         }

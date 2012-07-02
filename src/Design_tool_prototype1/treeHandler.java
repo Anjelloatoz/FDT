@@ -1,4 +1,5 @@
 package Design_tool_prototype1;
+
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -82,7 +83,6 @@ public class treeHandler implements ActionListener, MouseListener{
         
         IconNode history_node = new IconNode("Pattern History");
         project_node.add(history_node);
-        System.out.println("The size of history elements is: "+project.history_elements.size());
             
         for(int i = 0; i < project.history_elements.size(); i++){
             history_node.add(new IconNode(project.history_elements.get(i)));
@@ -162,14 +162,25 @@ public class treeHandler implements ActionListener, MouseListener{
     }
 
     public void mouseClicked(MouseEvent e){
-/*        TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
-        DefaultMutableTreeNode clicked_node = (DefaultMutableTreeNode)selPath.getLastPathComponent();
-        Element clicked_element = (Element)clicked_node.getUserObject();
-*/
+        TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
+        if(selPath!=null){
+            System.out.println("OK the path now is:"+selPath);
+            tree.setSelectionPath(selPath);
+            DefaultMutableTreeNode clicked_node = (DefaultMutableTreeNode)tree.getSelectionPath().getLastPathComponent();
+            try{
+                Element clicked_element = (Element)clicked_node.getUserObject();
+                svgc.setSelectedDrawing(clicked_element);
+                svgc.refresh();
+            }
+            catch(Exception e2){
+                System.out.println("Not an element"+e2);
+            }
+            
+        }
     }
     public void mousePressed(MouseEvent e) {
         TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
-        tree.setSelectionPath(selPath);        
+        tree.setSelectionPath(selPath);
     }
 
     public void mouseReleased(MouseEvent e){
@@ -218,8 +229,6 @@ public class treeHandler implements ActionListener, MouseListener{
                     }
                 }
             }
-
-
         }
     }
 

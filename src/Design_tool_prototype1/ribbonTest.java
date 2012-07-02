@@ -787,7 +787,7 @@ FileFilter projectfilter = new FileNameExtensionFilter("Temporary project format
 //    System.out.println("The path is: "+file.getPath());
     int result = jfc.showOpenDialog(this);
 
-    System.out.println(jfc.getSelectedFile().getName());
+    System.out.println("JFC Selected file is "+jfc.getSelectedFile().getName());
     if(result == JFileChooser.CANCEL_OPTION) return;
     String[] path = StringUtils.split(jfc.getCurrentDirectory().getPath(), "\\");
 
@@ -835,7 +835,7 @@ FileFilter projectfilter = new FileNameExtensionFilter("Temporary project format
         SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parser);
 
         try {
-            System.out.println(p.patterns.get(i).front);
+            System.out.println("p.patterns.get(i).front is: "+p.patterns.get(i).front);
             Node ef = DOMUtilities.parseXML(p.patterns.get(i).front, svgF.document,svgF.canvas.getURI(), null, null,f);
 
             Element el = svgF.document.createElement("svg");
@@ -994,7 +994,6 @@ public void projectWriter(projectObject po){
         }
     }
     private static void appInit(){
-        System.out.println("Came to the App");
         SwingUtilities.invokeLater(new Runnable(){
             public void run(){
                 try{
@@ -1009,15 +1008,6 @@ public void projectWriter(projectObject po){
         });
         splashGraphics.setPaint(Color.WHITE);
         splashText("Initializing session modules...");
-        System.out.println("Finished AppInit");
-        try{
-            Thread.sleep(200000);
-        }
-        catch(Exception e){
-
-        }
-
-        System.out.println("Finished AppInit");
     }
 
     public static void splashText(String str)
@@ -1103,6 +1093,5 @@ public static void main(String args[])throws Exception{
 
     splashInit();
     appInit();
-    System.out.println("Came here");
 }
 }
