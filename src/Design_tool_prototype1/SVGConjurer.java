@@ -156,6 +156,15 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
  //           if(!(selected_button_box==null)) clearComponentBounds();
             if(shape_type_number != 0){
 
+                if(last_location != null){
+                    removeElement(document.getElementById("prediction"));
+                    drawPrediction();
+                }
+
+                else{
+                    drawPrediction();
+                }
+
 //                mouse_point = e.getPoint();
 //                last_location = e.getPoint();
                 last_location = mouse_point;
@@ -163,10 +172,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 whole_path_locations_list.add(last_location);
                 drawLocationCoordinates();
                 drawLocation();
-
-                removeElement(document.getElementById("prediction"));
-                drawPrediction();
-
                 if(current_drawing_locations.size() == shape_type_number){
                     drawSegment();
                 }
