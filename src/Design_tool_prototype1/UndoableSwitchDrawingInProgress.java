@@ -19,7 +19,7 @@ public class UndoableSwitchDrawingInProgress extends AbstractUndoableEdit{
         this.drawing_in_progress = svgc.drawing_in_progress;
         this.new_drawing_in_progress = drawing_in_progress;
         svgc.drawing_in_progress = new_drawing_in_progress;
-        System.out.println("Came into the UndoableSwitchDrawingInProgress");
+//        System.out.println("Came into the UndoableSwitchDrawingInProgress");
     }
 
     public String getPresentationName(){
@@ -28,15 +28,13 @@ public class UndoableSwitchDrawingInProgress extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
-        System.out.println("Came into the redo");
+        System.out.println("Came into the UndoableSwitchDrawingInProgress redo");
         svgc.drawing_in_progress = new_drawing_in_progress;
     }
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("    UNDO-UndoableSwitchInProgress");
+        System.out.println("Came into the UndoableSwitchDrawingInProgress undo");
         svgc.drawing_in_progress = drawing_in_progress;
-        SVGConjurer svg = new SVGConjurer();
-        svg.printlocations("From the undo ");
     }
 }

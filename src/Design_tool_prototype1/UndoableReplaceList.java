@@ -16,7 +16,7 @@ public class UndoableReplaceList extends AbstractUndoableEdit{
     private ArrayList<Point2D> current_drawing_locations;
 
     public UndoableReplaceList(SVGConjurer svgc){
-        System.out.println("Came into the UndoableReplaceList");
+//        System.out.println("Came into the UndoableReplaceList");
         this.svgc = svgc;
         this.current_drawing_locations = svgc.current_drawing_locations;
         this.prev_point = current_drawing_locations.get(0);

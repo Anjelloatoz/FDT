@@ -6,30 +6,29 @@ import javax.swing.undo.*;
 import java.util.*;
 
 import org.w3c.dom.Element;
-import org.w3c.dom.Document;
 import org.apache.batik.swing.JSVGCanvas;
 import org.apache.batik.bridge.UpdateManager;
 
-public class UndoableAddElement extends AbstractUndoableEdit{
+public class UndoableAppendChild extends AbstractUndoableEdit{
     SVGConjurer svgc;
+    final Element Parent;
+    final Element Child;
+    final Element prev_Parent;
     JSVGCanvas canvas;
-    Element element;
-    Document document;
-    Element top_element;
+    final Element prev_parent;
 
-    public UndoableAddElement(SVGConjurer svgc, Element new_element, Element loc_element){
+    public UndoableAppendChild(SVGConjurer svgc, Element parent, Element child){
         this.svgc = svgc;
         this.canvas = svgc.canvas;
-        this.element = new_element;
-        this.document = svgc.document;
-        this.top_element = loc_element;
-//        System.out.println("Came into the UndoableAddElement");
+        Parent = parent;
+        prev_Parent = (Element)child.getParentNode();
+        Child = child;
+        prev_parent = (Element)child.getParentNode();
+        System.out.println("Came into the UndoableAppendChild");
 
         Runnable r = new Runnable(){
           public void run(){
-              Element root = document.getDocumentElement();
-//              root.appendChild(element);
-              root.insertBefore(element, top_element);
+              Parent.appendChild(Child);
           }
         };
         UpdateManager um = canvas.getUpdateManager();
@@ -42,12 +41,11 @@ public class UndoableAddElement extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
+        System.out.println("Came into the UndoableAppendChild redo");
 
         Runnable r = new Runnable(){
           public void run(){
-              Element root = document.getDocumentElement();
-//              root.appendChild(element);
-              root.insertBefore(element, top_element);
+              Parent.appendChild(Child);
           }
         };
         UpdateManager um = canvas.getUpdateManager();
@@ -56,13 +54,19 @@ public class UndoableAddElement extends AbstractUndoableEdit{
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("    UNDO-UndoableAddElement");
+        System.out.println("Came into the UndoableAppendChild undo");
+//        System.out.println("prev_Parent: "+prev_Parent.getLocalName());
+//        System.out.println("Child: "+Child.getLocalName());
 
         Runnable r = new Runnable(){
           public void run(){
-              Element root = document.getDocumentElement();
-//              root.removeChild(element);
-              element.getParentNode().removeChild(element);
+//
+              try{
+              prev_Parent.appendChild(Child);
+              }
+              catch(Exception e){
+                  Parent.removeChild(Child);
+              }
           }
         };
         UpdateManager um = canvas.getUpdateManager();

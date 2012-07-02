@@ -93,6 +93,12 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         private Point2D selected_component_station_point;
         private Point2D selected_shape_station_point;
         private Point2D selected_component_dimensions;
+        Point2D before_drag_edit_point;
+        String before_drag_drawing = "";
+        Point2D after_drag_edit_point;
+        String after_drag_drawing = "";
+
+        Point2D prev_point_coords;
         private SVGGraphics2D generator;
         boolean axises = false;
         Cursor cross_hair = new Cursor(Cursor.CROSSHAIR_CURSOR);
@@ -103,6 +109,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         String fillUri;
         String left_pattern_coords = "";
         String right_pattern_coords = "";
+        String prev_pattern_coords = "";
         alterStation as;
         ribbonTest rt;
         private boolean ctrl = false;
@@ -125,6 +132,15 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
         UndoableRemoveElement ure;
         UndoableDrawingNumberDeduct udnd;
+        UndoableDrawingNumberIncrease udni;
+        UndoableAppendChild uac;
+        UndoableRemoveChild urc;
+        UndoableClearList ucl;
+        UndoableClearPointList ucpl;
+        UndoableClearLocation uclc;
+        UndoableClearLocationList ucll;
+
+        UndoablePatternDrag upd;
 
         public SVGConjurer(){
 
@@ -523,7 +539,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 current_drawing.setAttributeNS(null, "fill", "none");
                 current_drawing.setAttributeNS(null, "d", "M "+current_drawing_locations.get(0).getX()+" "+current_drawing_locations.get(0).getY());
                 p3("9. current_drawing_locations: "+current_drawing_locations.size());
-                uae = new UndoableAddElement(this, current_drawing);
+                uae = new UndoableAddElement(this, current_drawing, location_list.get(1));
                 compound_edit.addEdit(uae);
                 p3("10. current_drawing_locations: "+current_drawing_locations.size());
 //*                root.appendChild(current_drawing);
@@ -561,8 +577,9 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 current_drawing.setAttributeNS (null, "stroke-width", "1");
                 current_drawing.setAttributeNS(null, "fill", "none");
                 current_drawing.setAttributeNS(null, "d", "M "+current_drawing_locations.get(0).getX()+" "+current_drawing_locations.get(0).getY());
-                uae = new UndoableAddElement(this, current_drawing);
+                uae = new UndoableAddElement(this, current_drawing, location_list.get(1));
                 compound_edit.addEdit(uae);
+
 //*                root.appendChild(current_drawing);
             }
             usa = new UndoableSetAttribute(this, current_drawing, "d", current_drawing.getAttributeNS(null, "d")+" C"+current_drawing_locations.get(1).getX()+" "+current_drawing_locations.get(1).getY()+" "+current_drawing_locations.get(2).getX()+" "+current_drawing_locations.get(2).getY()+" "+current_drawing_locations.get(3).getX()+" "+current_drawing_locations.get(3).getY());
@@ -588,8 +605,15 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         public void completionAgent(){
+            p4("Came into the Completion agent");
             Element current_drawing = document.getElementById("drawing_"+drawing_number);
+            compound_edit = new CompoundEdit();
             finishDrawing(current_drawing);
+            compound_edit.end();
+            manager.addEdit(compound_edit);
+            dbf.manager = manager;
+            dbf.updateButtons();
+            
             try{
                 Element e = document.getElementById("prediction");
                 e.getParentNode().removeChild(e);
@@ -600,12 +624,44 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         public void finishDrawing(final Element current_drawing){
-            Runnable r = new Runnable(){
-              public void run(){                  
-                  Element root = document.getDocumentElement();
+            p4("came into the FinishDrawing: "+current_drawing.getAttribute("d"));
+            java.awt.Shape test_shape = null;
 
+//            System.out.println("Current drawing parent is "+current_drawing.getParentNode().getLocalName()+" "+((Element)current_drawing.getParentNode()).getAttribute("id"));
+            try{
+                test_shape = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(current_drawing.getAttributeNS(null,"d")), new GeneralPath().WIND_EVEN_ODD);
+            }
+            catch(Exception e){
+                System.out.println("Test Exception");
+            }
+            java.awt.geom.AffineTransform at = new java.awt.geom.AffineTransform();
+            at.scale(-1, 1);
+            java.awt.Shape mirrored_shape = at.createTransformedShape(test_shape);
+
+            String test_d = "";
+            PathIterator pi = mirrored_shape.getPathIterator(null);
+                        double[] split_path_coords = new double[6];
+
+                        while(!pi.isDone()){
+                            int segment = pi.currentSegment(split_path_coords);
+                            if(segment == pi.SEG_MOVETO){
+                                test_d = "M "+split_path_coords[0]+" "+split_path_coords[1];
+                            }
+                            if(segment == pi.SEG_LINETO){
+                                test_d = test_d+" L "+split_path_coords[0]+" "+split_path_coords[1];
+                            }
+                            if(segment == pi.SEG_CUBICTO){
+                                test_d = test_d+" C "+split_path_coords[0]+" "+split_path_coords[1]+" "+split_path_coords[2]+" "+split_path_coords[3]+" "+split_path_coords[4]+" "+split_path_coords[5];
+                            }
+                            pi.next();
+                        }
+                        System.out.println("The Mirrored shape is : "+test_d);
+
+
+                  Element root = document.getDocumentElement();
                   try{
-                      current_drawing.setAttributeNS(null, "d", current_drawing.getAttributeNS(null, "d")+" Z");
+                      usa = new UndoableSetAttribute(this, current_drawing, "d", current_drawing.getAttributeNS(null, "d")+" Z");
+                      compound_edit.addEdit(usa);
                   }
 
                   catch(Exception e){
@@ -617,39 +673,51 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                   svg_element.setAttribute("x", ""+0);
                   svg_element.setAttribute("y", ""+0);
 
-                  svg_element.appendChild(current_drawing);
-                  root.appendChild(svg_element);
-
-                  org.w3c.dom.NodeList nl = document.getElementsByTagName("svg");
-                  Element el = (Element)nl.item(1);
+/*                  urc = new UndoableRemoveChild(this, (Element)current_drawing.getParentNode(), current_drawing);
+                  compound_edit.addEdit(urc);
+*/
+                  uac = new UndoableAppendChild(this, svg_element, current_drawing);
+                  compound_edit.addEdit(uac);
+                  uac = new UndoableAppendChild(this, root, svg_element);
+                  compound_edit.addEdit(uac);
 
                   registerPatternListeners(current_drawing);
-                  p1(current_drawing.getAttribute("d"));
-                  drawing_number++;
-              }
-            };
-            Element root = document.getDocumentElement();
+//                  p1(current_drawing.getAttribute("d"));
+                  udni = new UndoableDrawingNumberIncrease(this);
+                  compound_edit.addEdit(udni);
+
+                  System.out.println("CAME HERE");
 
             p3("In the finish drawing location_list: "+location_list.size());
             for(int i = 0; i < location_list.size(); i++){
-                root.removeChild(location_list.get(i));
+                urc = new UndoableRemoveChild(this, (Element)location_list.get(i).getParentNode(), location_list.get(i));
+                compound_edit.addEdit(urc);
             }
 
             p3("In the finish drawing location_coordinates_list: "+location_coordinates_list.size());
             for(int i = 0; i < location_coordinates_list.size(); i++){
-                root.removeChild(location_coordinates_list.get(i));
+                urc = new UndoableRemoveChild(this, (Element)location_coordinates_list.get(i).getParentNode(), location_coordinates_list.get(i));
+                compound_edit.addEdit(urc);
             }
-            location_list.clear();
-            location_coordinates_list.clear();
+            ucll = new UndoableClearLocationList(location_list);
+            compound_edit.addEdit(ucll);
+            
+            ucll = new UndoableClearLocationList(location_coordinates_list);
+            compound_edit.addEdit(ucll);
 
-            UpdateManager um = canvas.getUpdateManager();
-	    um.getUpdateRunnableQueue().invokeLater(r);
-            drawing_in_progress = false;
-            current_drawing_locations.clear();
-            whole_path_locations_list.clear();
-            last_location = null;
-            manager.discardAllEdits();
-            dbf.updateButtons();
+            usdip = new UndoableSwitchDrawingInProgress(this, false);
+            compound_edit.addEdit(usdip);
+
+            ucpl = new UndoableClearPointList(current_drawing_locations);
+            compound_edit.addEdit(ucpl);
+
+            ucpl = new UndoableClearPointList(whole_path_locations_list);
+            compound_edit.addEdit(ucpl);
+
+            uclc = new UndoableClearLocation(last_location);
+            compound_edit.addEdit(uclc);
+
+//            System.out.println("Current drawing parent is "+current_drawing.getParentNode().getLocalName()+" "+((Element)current_drawing.getParentNode()).getAttribute("id"));
         }
 
         public Element setGuideImage(final String image_path, final int width, final int height){
@@ -736,6 +804,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             p2("SELECTED SHAPE IS "+selected_shape.getAttributeNS(null,"d"));
             p2("*********************************************************************************");
                     java.awt.Shape s = null;
+
                     boolean splitable = true;
                     Point2D split_path_begining = whole_path_locations_list.get(0);
                     Point2D split_path_ending = whole_path_locations_list.get(whole_path_locations_list.size()-1);
@@ -1086,19 +1155,21 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
                         p1("******************************************** OUT OF THE LINE_807_LOOP ***********************************************");
 
+                        compound_edit = new CompoundEdit();
                         Element root = document.getDocumentElement();
                         Element del = document.getElementById("svg_"+selected_shape.getAttribute("id"));
-                        root.removeChild(del);
-/*                        ure = new UndoableRemoveElement(this, del);
-                        compound_edit.addEdit(ure);*/
+//                        root.removeChild(del);
+                        ure = new UndoableRemoveElement(this, del);
+                        compound_edit.addEdit(ure);
 
-                        root.removeChild(document.getElementById("drawing_"+drawing_number));
-/*                        ure = new UndoableRemoveElement(this, document.getElementById("drawing_"+drawing_number));
-                        compound_edit.addEdit(ure);*/
+//                        root.removeChild(document.getElementById("drawing_"+drawing_number));
+                        ure = new UndoableRemoveElement(this, document.getElementById("drawing_"+drawing_number));
+                        compound_edit.addEdit(ure);
 
-                        drawing_number = drawing_number-1;
-/*                        udnd = new UndoableDrawingNumberDeduct(this);
-                        compound_edit.addEdit(udnd);*/
+//                        drawing_number = drawing_number-1;
+                        udnd = new UndoableDrawingNumberDeduct(this);
+                        compound_edit.addEdit(udnd);
+
                         String first_element_name = selected_shape.getAttribute("id");
 
                         Element first_drawing = document.createElementNS(svgNS, "path");
@@ -1108,9 +1179,12 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                         first_drawing.setAttributeNS (null, "stroke-width", "1");
                         first_drawing.setAttributeNS(null, "fill", "none");
                         //selected_shape.getParentNode().appendChild(first_drawing);
-                        finishDrawing(first_drawing);
                         first_drawing.setAttributeNS(null, "d", element1);
-                        drawing_number++;
+                        finishDrawing(first_drawing);
+                        
+//                        drawing_number++;
+                        udni = new UndoableDrawingNumberIncrease(this);
+                        compound_edit.addEdit(udni);
 
                         Element second_drawing = document.createElementNS(svgNS, "path");
                         second_drawing.setAttributeNS (null, "id", "drawing_"+drawing_number);
@@ -1121,22 +1195,60 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                         second_drawing.setAttributeNS(null, "d", element2);
                         finishDrawing(second_drawing);
 
-                        for(int i = 0; i < location_list.size(); i++){
+/*                        for(int i = 0; i < location_list.size(); i++){
                             root.removeChild(location_list.get(i));
+                        }*/
+
+                        for(int i = 0; i < location_list.size(); i++){
+                            urc = new UndoableRemoveChild(this, (Element)location_list.get(i).getParentNode(), location_list.get(i));
+                            compound_edit.addEdit(urc);
                         }
 
-                        for(int i = 0; i < location_coordinates_list.size(); i++){
+/*                        for(int i = 0; i < location_coordinates_list.size(); i++){
                             root.removeChild(location_coordinates_list.get(i));
+                        }*/
+                        for(int i = 0; i < location_coordinates_list.size(); i++){
+                            urc = new UndoableRemoveChild(this, (Element)location_coordinates_list.get(i).getParentNode(), location_coordinates_list.get(i));
+                            compound_edit.addEdit(urc);
                         }
-                        location_list.clear();
-                        location_coordinates_list.clear();
-                        drawing_number++;
+
+//                        location_list.clear();
+                        ucll = new UndoableClearLocationList(location_list);
+                        compound_edit.addEdit(ucll);
+
+
+//                        location_coordinates_list.clear();
+                        ucll = new UndoableClearLocationList(location_coordinates_list);
+                        compound_edit.addEdit(ucll);
+
+//                        drawing_number++;
+                        udni = new UndoableDrawingNumberIncrease(this);
+                        compound_edit.addEdit(udni);
+
                         registerPatternListeners(first_drawing);
                         registerPatternListeners(second_drawing);
-                        drawing_in_progress = false;
-                        current_drawing_locations.clear();
-                        whole_path_locations_list.clear();
-                        last_location = null;
+
+//                        drawing_in_progress = false;
+                        usdip = new UndoableSwitchDrawingInProgress(this, false);
+                        compound_edit.addEdit(usdip);
+
+//                        current_drawing_locations.clear();
+//                        whole_path_locations_list.clear();
+//                        last_location = null;
+
+                        ucpl = new UndoableClearPointList(current_drawing_locations);
+                        compound_edit.addEdit(ucpl);
+
+                        ucpl = new UndoableClearPointList(whole_path_locations_list);
+                        compound_edit.addEdit(ucpl);
+
+                        uclc = new UndoableClearLocation(last_location);
+                        compound_edit.addEdit(uclc);
+
+                        compound_edit.end();
+                        manager.addEdit(compound_edit);
+                        dbf.manager = manager;
+                        dbf.updateButtons();
                     }
         }
 
@@ -1177,10 +1289,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 }
                 pi.next();
             }
-        }
-
-        public void beginEndPointCheck(){
-
         }
 
         public boolean lineSplitter(Point2D p1, Point2D p2, Point2D break_point){
@@ -1310,10 +1418,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             }
         }
 
-        public void editPattern(){
-
-        }
-
         public void delete_drawing(){
             Runnable r = new Runnable(){
                 public void run(){
@@ -1342,6 +1446,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
     
     public class OnMouseOverEditPointAction implements EventListener {
         public void handleEvent (Event evt) {
+            System.out.println("OnMouseOverEditPointAction");
          EventTarget tt = evt.getTarget();
          Element e1 = (Element)tt;
          e1.setAttribute("fill", "red");
@@ -1374,11 +1479,15 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
          e1.setAttribute ("fill", "red");
          double x = Integer.parseInt(StringUtils.substringBefore(e1.getAttribute("cx"),"."));
          double y = Integer.parseInt(StringUtils.substringBefore(e1.getAttribute("cy"),"."));
+         before_drag_edit_point = new Point2D.Double(x, y);
 
          x = Double.parseDouble(e1.getAttribute("cx"));
          y = Double.parseDouble(e1.getAttribute("cy"));
+         prev_point_coords = new Point2D.Double(x, y);
          Element current_drawing = document.getElementById("drawing_"+drawing_number);
          p2("Shape coords are: "+current_drawing.getAttribute("d"));
+         before_drag_drawing = current_drawing.getAttribute("d");
+         prev_pattern_coords = current_drawing.getAttribute("d");
          System.out.println("Selected drag point: "+x+" "+y);
          p2("Selected drag point untruncated: "+e1.getAttribute("cx")+" "+e1.getAttribute("cy"));
          left_pattern_coords = StringUtils.substringBefore(current_drawing.getAttribute("d"), x+" "+y);
@@ -1391,17 +1500,36 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
       }
 
         public class OnEditPointMouseUpAction implements EventListener {
-     public void handleEvent (Event evt) {
+     public void handleEvent (Event evt){
+         p2("In the mouse up");
          EventTarget tt = evt.getTarget();
          Element e1 = (Element)tt;
-         edit_point_moveable = false;
+         Element current_drawing = document.getElementById("drawing_"+drawing_number);
 
-        }
+         double x = Integer.parseInt(StringUtils.substringBefore(e1.getAttribute("cx"),"."));
+         double y = Integer.parseInt(StringUtils.substringBefore(e1.getAttribute("cy"),"."));
+         after_drag_edit_point = new Point2D.Double(x, y);
+         after_drag_drawing = current_drawing.getAttribute("d");
+         edit_point_moveable = false;
+         UndoablePatternDragCaller(e1);
+     }
       }
 
+        public void UndoablePatternDragCaller(Element e1){
+            System.out.println("UndoablePatternDragCaller called");
+            Element current_drawing = document.getElementById("drawing_"+drawing_number);
+            upd = new UndoablePatternDrag(this, before_drag_edit_point, after_drag_edit_point, before_drag_drawing, after_drag_drawing, current_drawing, selected_drag_point);
+            compound_edit = new CompoundEdit();
+            compound_edit.addEdit(upd);
+            compound_edit.end();
+            manager.addEdit(compound_edit);
+            dbf.manager = manager;
+            dbf.updateButtons();
+        }
+
         public void registerPatternListeners(Element element){
-        EventTarget t1 = (EventTarget) document.getElementById (element.getAttribute("id"));
-//        p1("Registering element is "+element.getAttribute("id"));
+        EventTarget t1 = (EventTarget)element; //document.getElementById (element.getAttribute("id"));
+        System.out.println("Registering element is "+element.getAttribute("id"));
 
         t1.addEventListener ("mouseover", new PATTERN_MouseOverAction(), false);
         t1.addEventListener ("mouseout", new PATTERN_MouseOutAction(), false);
@@ -1437,7 +1565,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
      public void handleEvent (Event evt) {
          EventTarget tt = evt.getTarget();
          Element e1 = (Element)tt;
-         p1("The selected Element is "+e1.getAttribute("d"));
+         p2("The selected Element is "+e1.getAttribute("d"));
          selected_shape = e1;
          Element root = document.getDocumentElement();
          root.removeChild(e1.getParentNode());
@@ -1616,15 +1744,9 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
          selected_button_box.setAttribute("fill", "none");
          e1.getParentNode().appendChild(selected_button_box);
          componentBounds(fx, fy, 1);
-//         componentBounds(x+width/2, y, 2);
- //        componentBounds(x+width, y, 3);
-  //       componentBounds(x+width, y+height/2, 4);
          componentBounds(fx+fwidth-2, fy+fheight-2, 5);
          p1("fx+fwidth-2 is "+(fx+fwidth-2));
          p1("fy+fheight-2 is "+(fy+fheight-2));
-      //   componentBounds(x+width/2, y+height, 5);
-        // componentBounds(x, y+height, 6);
-         //componentBounds(x, y+height/2, 7);
         }
       }
         
@@ -1722,6 +1844,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
         public class OnMouseOverDragPointAction implements EventListener {
         public void handleEvent (Event evt) {
+            System.out.println("In the drag point listeners");
          EventTarget tt = evt.getTarget();
          Element e1 = (Element)tt;
          e1.setAttribute ("fill", "hotpink");
@@ -1924,10 +2047,10 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             public void run(){
                 selected_drag_point.setAttribute("cx",mouse_point.getX()+"");
                 selected_drag_point.setAttribute("cy",mouse_point.getY()+"");
-                p1("Left pattern coords are: "+left_pattern_coords);
-                p1("Mouse coords are: "+mouse_point.getX()+" "+mouse_point.getY());
-                p1("Right pattern coords are: "+right_pattern_coords);
-                p1("pattern D is : "+left_pattern_coords+" "+mouse_point.getX()+" "+mouse_point.getY()+" "+right_pattern_coords);
+//                p1("Left pattern coords are: "+left_pattern_coords);
+//                p1("Mouse coords are: "+mouse_point.getX()+" "+mouse_point.getY());
+//                p1("Right pattern coords are: "+right_pattern_coords);
+//                p1("pattern D is : "+left_pattern_coords+" "+mouse_point.getX()+" "+mouse_point.getY()+" "+right_pattern_coords);
                 selected_shape.setAttribute("d", left_pattern_coords+" "+mouse_point.getX()+" "+mouse_point.getY()+" "+right_pattern_coords);
             }
         };
@@ -1936,16 +2059,16 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
     }
 
     public void currentDrawingDrag(){
-        p2("CurrentDrawingDrag called");
+//        p2("CurrentDrawingDrag called");
         Runnable r = new Runnable(){
             public void run(){
                 selected_drag_point.setAttribute("cx",mouse_point.getX()+"");
                 selected_drag_point.setAttribute("cy",mouse_point.getY()+"");
                 Element current_drawing = document.getElementById("drawing_"+drawing_number);
-                p2("Left pattern coords are: "+left_pattern_coords);
-                p2("Mouse coords are: "+mouse_point.getX()+" "+mouse_point.getY());
-                p2("Right pattern coords are: "+right_pattern_coords);
-                p2("pattern D is : "+left_pattern_coords+" "+mouse_point.getX()+" "+mouse_point.getY()+" "+right_pattern_coords);
+//                p2("Left pattern coords are: "+left_pattern_coords);
+//                p2("Mouse coords are: "+mouse_point.getX()+" "+mouse_point.getY());
+//                p2("Right pattern coords are: "+right_pattern_coords);
+//                p2("pattern D is : "+left_pattern_coords+" "+mouse_point.getX()+" "+mouse_point.getY()+" "+right_pattern_coords);
                 current_drawing.setAttribute("d", left_pattern_coords+" "+mouse_point.getX()+" "+mouse_point.getY()+" "+right_pattern_coords);
             }
         };
@@ -2077,7 +2200,10 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         System.out.println(s);
     }
     private void p3(String s){
-//        System.out.println(s);
+        System.out.println(s);
+    }
+    private void p4(String s){
+        System.out.println(s);
     }
 
     private void addPoint(){

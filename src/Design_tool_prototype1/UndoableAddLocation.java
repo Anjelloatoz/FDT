@@ -26,7 +26,7 @@ public class UndoableAddLocation extends AbstractUndoableEdit{
         this.doc = document;
         this.canvas = svgc.canvas;
         svgc.registerEditPointListeners(Location);
-        System.out.println("Came into the UndoableAddLocation");
+//        System.out.println("Came into the UndoableAddLocation");
 
         Runnable r = new Runnable(){
             public void run(){
@@ -58,7 +58,7 @@ public class UndoableAddLocation extends AbstractUndoableEdit{
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("    UNDO-UndoableAddLocation");
+//        System.out.println("    UNDO-UndoableAddLocation");
         Runnable r = new Runnable(){
             public void run(){
                 Element root = doc.getDocumentElement();

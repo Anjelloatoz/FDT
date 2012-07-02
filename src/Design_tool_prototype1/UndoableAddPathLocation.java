@@ -19,7 +19,7 @@ public class UndoableAddPathLocation extends AbstractUndoableEdit{
         this.whole_path_locations_list = svgc.whole_path_locations_list;
         this.element = last_location;
         whole_path_locations_list.add(element);
-        System.out.println("Came into the UndoableAddPathLocation");
+//        System.out.println("Came into the UndoableAddPathLocation");
     }
 
     public String getPresentationName(){
@@ -33,8 +33,8 @@ public class UndoableAddPathLocation extends AbstractUndoableEdit{
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("    UNDO-UndoableAddPathLocation");
+  //      System.out.println("    UNDO-UndoableAddPathLocation");
         whole_path_locations_list.remove(element);
-        System.out.println("current_drawing_locations: "+svgc.current_drawing_locations.size());
+  //      System.out.println("current_drawing_locations: "+svgc.current_drawing_locations.size());
     }
 }
