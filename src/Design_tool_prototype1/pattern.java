@@ -9,6 +9,7 @@ public class pattern implements Serializable{
     String pattern_name = "Untitled pattern";
     String front;
     String rear;
+    ArrayList<String> fills = new ArrayList();
 
     pattern(String front, String rear, String name){
         this.front = front;

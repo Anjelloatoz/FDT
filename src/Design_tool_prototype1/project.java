@@ -10,4 +10,5 @@ public class project implements Serializable{
     String defs;
 
     ArrayList<pattern> patterns = new ArrayList();
+    ArrayList<String> history_elements = new ArrayList();
 }

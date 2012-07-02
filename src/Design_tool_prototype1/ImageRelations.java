@@ -40,7 +40,7 @@ public class ImageRelations {
 
     ImageRelations(Element element, String name, SVGConjurer svgc){
         Element local_element = (Element)element.cloneNode(true);
-        SVGRect rect = svgc.BoundryFinder(element, null);
+        Rectangle rect = svgc.BoundryFinder(element, null);
         elementProcessor(local_element, rect);
 
         this.InitializeDocument();
@@ -142,7 +142,7 @@ public class ImageRelations {
         }
     }
 
-    private SVGRect elementProcessor(Element element, SVGRect rect){
+    private Rectangle elementProcessor(Element element, Rectangle rect){
         if(element.getLocalName().equals("svg")){
             for(int i = 0; i < element.getChildNodes().getLength(); i++){
                 rect = elementProcessor((Element)element.getChildNodes().item(i), rect);

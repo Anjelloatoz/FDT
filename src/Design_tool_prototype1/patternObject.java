@@ -8,6 +8,7 @@ public class patternObject implements Serializable{
     String pattern_name = "Untitled pattern";
     Element front;
     Element rear;
+    ArrayList<Element_fill> associated_fabrics = new ArrayList();
 
     patternObject(Element front, Element rear, String name){
         this.front = front;

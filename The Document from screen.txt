@@ -1,0 +1,49 @@
+<svg contentScriptType="text/ecmascript" xmlns:xlink="http://www.w3.org/1999/xlink" zoomAndPan="magnify" contentStyleType="text/css" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" version="1.0">
+
+<line x1="0" x2="1032" y1="162.0" y2="162.0" id="axis_X" stroke="lime" stroke-width="1"/>
+<line x1="371.0" x2="371.0" y1="0" y2="640" id="axis_Y" stroke="lime" stroke-width="1"/>
+
+<svg contentScriptType="text/ecmascript" xmlns:xlink="http://www.w3.org/1999/xlink" zoomAndPan="magnify" contentStyleType="text/css" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" version="1.0">
+
+<defs id="pattern_defs">
+
+<pattern x="1.0in" y="1.0in" width="1.0in" xmlns:xlink="http://www.w3.org/1999/xlink" patternUnits="userSpaceOnUse" xlink:type="simple" xlink:actuate="onLoad" id="pattern_drawing_0" height="1.0in" preserveAspectRatio="xMidYMid meet" xlink:show="other">
+
+<image x="0" y="0" width="1.0in" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="file:/D:/NetBeansProjects%20Local%20backup/Live%20Files%2018-01-2011/Temp/Black%20White%20Zig%20Zag%20Prints%20TEST" xlink:type="simple" xlink:actuate="onLoad" id="fill_image_drawing_0" height="1.0in" preserveAspectRatio="xMidYMid meet" xlink:show="embed"/>
+
+</pattern>
+
+<pattern x="1.0in" y="1.0in" width="1.0in" xmlns:xlink="http://www.w3.org/1999/xlink" patternUnits="userSpaceOnUse" xlink:type="simple" xlink:actuate="onLoad" height="1.0in" id="pattern_drawing_1" preserveAspectRatio="xMidYMid meet" xlink:show="other">
+
+<image x="0" y="0" width="1.0in" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="file:/D:/NetBeansProjects%20Local%20backup/Live%20Files%2018-01-2011/Temp/Cobalt%20Cream%20Beige%20Emerald%20Grey%20TEST" xlink:type="simple" xlink:actuate="onLoad" height="1.0in" id="fill_image_drawing_1" preserveAspectRatio="xMidYMid meet" xlink:show="embed"/>
+
+</pattern>
+
+</defs>
+
+</svg>
+
+<svg contentScriptType="text/ecmascript" xmlns:xlink="http://www.w3.org/1999/xlink" zoomAndPan="magnify" contentStyleType="text/css" id="frontAnjelloatoz@gmail.com" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" version="1.0">
+
+<svg x="0" contentScriptType="text/ecmascript" y="0" xmlns:xlink="http://www.w3.org/1999/xlink" zoomAndPan="magnify" contentStyleType="text/css" id="svg_drawing_0" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" version="1.0">
+
+<path fill="url(#pattern_drawing_0)" stroke-width="1" id="drawing_0" d="M 139.0 107.0 L 256.0 43.0 L 218.0 213.0 L 316.0 184.0 L 368.0 206.0 C349.0 247.0 155.0 267.0 100.0 240.0 Z" pathLength="200" stroke="black"/>
+
+<text fill="slateblue" font-size="40" id="text_0" font-family="Arial, Arial, sans-serif">
+
+<textPath xlink:actuate="onLoad" xlink:type="simple" xlink:show="other" xmlns:xlink="http://www.w3.org/1999/xlink" href="#text_0_textPath">Sample Text</textPath>
+
+</text>
+
+<defs id="text_defs"><svg x="0" contentScriptType="text/ecmascript" y="0" xmlns:xlink="http://www.w3.org/1999/xlink" zoomAndPan="magnify" contentStyleType="text/css" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" version="1.0">
+
+<path fill="none" d="M 82.0 129.0 C141.0 57.0 217.0 44.0 299.0 85.0" stroke-width="1" id="text_0_textPath" pathLength="100" stroke="black"/>
+
+</svg>
+
+</defs>
+</svg>
+</svg>
+
+<svg contentScriptType="text/ecmascript" xmlns:xlink="http://www.w3.org/1999/xlink" zoomAndPan="magnify" contentStyleType="text/css" id="frontAnjelloatoz@gmail.com" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" version="1.0"/>
+</svg>

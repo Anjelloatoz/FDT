@@ -25,19 +25,20 @@ public class UndoableAddLocation extends AbstractUndoableEdit{
         this.Location_list = location_list;
         this.doc = document;
         this.canvas = svgc.canvas;
-        svgc.registerEditPointListeners(Location);
+        if(!svgc.on_bounds){
+            svgc.registerEditPointListeners(Location);
+        }
+        
 //        System.out.println("Came into the UndoableAddLocation");
 Location_list.add(Location);
         Runnable r = new Runnable(){
             public void run(){
                 Element root = doc.getDocumentElement();
                 root.appendChild(Location);
-                
-//                System.out.println("In the undoable add location Location_list:"+Location_list.size());
             }
         };
         UpdateManager um = canvas.getUpdateManager();
-	um.getUpdateRunnableQueue().invokeLater(r);
+        um.getUpdateRunnableQueue().invokeLater(r);
     }
 
     public String getPresentationName(){

@@ -54,10 +54,15 @@ public class ElementLocalizer{
         CharArrayWriter tmp_element_holder = new CharArrayWriter();
         try{
             Element tmp_container = guest_doc.createElementNS(station_svgc.svgNS, "svg");
-            tmp_container.appendChild(guest);
+            tmp_container.setAttribute("id", "temporary container");
+            tmp_container.setAttribute("x", "0");
+            tmp_container.setAttribute("x", "0");
+            Element g_element = guest_doc.createElementNS(station_svgc.svgNS, "g");
+            g_element.appendChild(guest);
+            tmp_container.appendChild(g_element);
             System.out.println("In the converter the guest is "+guest.getAttribute("id"));
             DOMUtilities.writeNode(tmp_container, tmp_element_holder);
-            System.out.println("Element Localizer 34: The element successfully written.- "+tmp_element_holder.toString());
+//            System.out.println("Element Localizer 65: The element successfully written.- "+tmp_element_holder.toString());
         }
         catch(Exception ex1){
             System.out.println("Element Localizer 37, Element Localizer Exception "+ex1);
@@ -66,14 +71,14 @@ public class ElementLocalizer{
         SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parser);
         Node reborn_node = null;
         container = station_doc.createElementNS(station_svgc.svgNS, "svg");
+        container.setAttribute("x", "0");
+        container.setAttribute("y", "0");
         try{
             reborn_node = DOMUtilities.parseXML(tmp_element_holder.toString(), station_doc,station_svgc.canvas.getURI(), null, null,f);
-            System.out.println("Element Localizer After creating the reborn_node its grand child is: "+reborn_node.getFirstChild().getFirstChild().getLocalName());
             container.appendChild(reborn_node.getFirstChild().getFirstChild());
-            System.out.println("Reborn_node successfully appended to the new container.");
         }
         catch(Exception ex2){
-            System.out.println("SVGConjurer 803: "+ex2);
+            System.out.println("Element Localizer: "+ex2);
         }
     }
 
