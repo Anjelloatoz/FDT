@@ -7,11 +7,9 @@ import java.io.File;
 public class ImageRelations2 {
     String file_uri = "";
     ImageRelations2(BufferedImage sent_image, String name){
-        System.out.println("In the ImageRelations2 with: "+name);
-        File image_output_file = new File("Temp\\"+name);
+        File image_output_file = new File("Temp\\"+name+" TEST");
         try{
             ImageIO.write(sent_image, "png", image_output_file);
-            System.out.println("In the ImageRelations2 image written: "+name);
         }
         catch(Exception e){
             System.out.println("ImageRelations2 Exception: "+e);

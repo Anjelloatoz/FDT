@@ -30,7 +30,6 @@ public class treeHandler implements ActionListener, MouseListener{
         this.rt = rt;
         this.svgc = svgc;
 
-
         history_element_popup = new JPopupMenu();
         JMenuItem new_layer_item = new JMenuItem("Create new layer", new ImageIcon("new_layer.gif"));
         new_layer_item.setActionCommand("new_layer_item");
@@ -65,6 +64,11 @@ public class treeHandler implements ActionListener, MouseListener{
         pattern_display_item.setActionCommand("pattern_display");
         pattern_display_item.addActionListener(this);
         pattern_object_popup.add(pattern_display_item);
+
+        JMenuItem pattern_save_item = new JMenuItem("Save Pattern", new ImageIcon("rename.gif"));
+        pattern_save_item.setActionCommand("pattern_save");
+        pattern_save_item.addActionListener(this);
+        pattern_object_popup.add(pattern_save_item);
 
         updateTree(project);
     }
@@ -186,6 +190,15 @@ public class treeHandler implements ActionListener, MouseListener{
         else if(ae.getActionCommand().equals("pattern_display")){
             System.out.println(pattern_object.pattern_name+":");
             svgc.getStringPresentation(pattern_object.front);
+        }
+        else if(ae.getActionCommand().equals("pattern_save")){
+            System.out.println(pattern_object.pattern_name+":");
+            ImageRelations ir = new ImageRelations(pattern_object.front, pattern_object.pattern_name, svgc);
+            patternPackage pp = new patternPackage();
+            pp.setPattern(pattern_object);
+            pp.setFrontView(ir.image);
+            pp.setRearView(ir.image);
+            rt.addPattern(pp);
         }
         else if(ae.getActionCommand().equals("drawing_duplicate")){
             Element duplicate = (Element)selected_element.cloneNode(true);

@@ -1709,6 +1709,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                   SVGRect rect = ls.getBBox(selected_shape);
                   float x = rect.getX();
                   float y = rect.getY();
+
                   float width = rect.getWidth();
                   float height = rect.getHeight();
 
@@ -2552,6 +2553,50 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
     public void transcoder(JSVGCanvas transcode_canvas, char format){
 
+    }
+
+    public SVGRect BoundryFinder(Element element, SVGRect rect){
+        if(rect == null){
+            SVGLocatableSupport ls = new SVGLocatableSupport();
+            rect = ls.getBBox(element);
+        }
+        if(element.getLocalName().equals("svg")){
+            for(int i = 0; i < element.getChildNodes().getLength(); i++){
+                rect = BoundryFinder((Element)element.getChildNodes().item(i), rect);
+            }
+        }
+        else{
+/*            if(element.getLocalName().equals("path")){
+                element.setAttribute("fill", "white");
+            }*/
+
+            SVGLocatableSupport ls = new SVGLocatableSupport();
+            SVGRect local_rect = ls.getBBox(element);
+
+            float local_x1 = local_rect.getX();
+            float local_y1 = local_rect.getY();
+            float local_x2 = local_rect.getX()+local_rect.getWidth();
+            float local_y2 = local_rect.getY()+local_rect.getHeight();
+
+            float rect_x1 = rect.getX();
+            float rect_y1 = rect.getY();
+            float rect_x2 = rect.getX()+rect.getWidth();
+            float rect_y2 = rect.getY()+rect.getHeight();
+
+            if(local_x1<rect_x1){
+                rect.setX(local_x1);
+            }
+            if(local_y1<rect_y1){
+                rect.setY(local_y1);
+            }
+            if(local_x2 > rect_x2){
+                rect.setWidth(local_x2-rect_x1);
+            }
+            if(local_y2 > rect_y2){
+                rect.setHeight(local_y2-rect_y1);
+            }
+        }
+        return rect;
     }
 
     public void getStringPresentation(Element e){
