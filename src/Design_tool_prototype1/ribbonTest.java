@@ -4,6 +4,7 @@ import javax.swing.event.*;
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import javax.swing.plaf.basic.BasicInternalFrameUI;
 import java.awt.image.*;
+import java.net.URI;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -544,6 +545,8 @@ increaseSplash();
 splashText("Setting the screen........");
         this.setSize(dim);
         this.setVisible(true);
+        File e = new File("Temp");
+        e.mkdir();
 splashText("OK");
 
 increaseSplash();
@@ -557,19 +560,6 @@ increaseSplash();
         svgF.color = colorChooser.getColor();
         svgR.color = colorChooser.getColor();
       }
-
-/*    public void addFabric(String new_fabric[]){
-//        System.out.println("addFabric(String new_fabric[]) Called");
-        Fabric fabric = new Fabric(new_fabric[0], new_fabric[1], new_fabric[2], new_fabric[3], new_fabric[4]);
-        addFabric(fabric);
-    }*/
-
-/*    public void addButton(String new_button[]){
-//        System.out.println("addButton(String new_button[]) Called");
-        button btn = new button(new_button[0], new_button[1], new_button[2], new_button[3], new_button[4]);
-        addButton(btn);
-    }*/
-
     public void actionPerformed(ActionEvent ae){
         try{
         JCommandButton jcb = (JCommandButton)ae.getSource();
@@ -602,8 +592,7 @@ increaseSplash();
             catch(Exception ex){
                 System.out.println("Project close Exception");
             }
-            File e = new File("Temp");
-            e.mkdir();
+            
             setBoards();
             projectObject po = new projectObject(svgF.document, svgR.document);
 
@@ -654,10 +643,12 @@ increaseSplash();
             if(jtb.getName().equals("fabric")){
                 System.out.println("A fabrics button is pressed.:"+jtb.getParent().getComponentZOrder(jtb));
 //                svgF.fillUri = fabrics_list.get(Integer.parseInt(tmp[1])).getFabricMainImage().toString();
-                svgF.fill_image = fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricMainImage();
-                svgF.fillPattern();
-                ImageRelations ir = new ImageRelations(fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricMainImage(), fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricNameLong());
-                imageWriterTester(imageToArray(fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricMainImage()));
+//                svgF.fill_image = fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricMainImage();
+//                svgF.fillPattern();
+                ImageRelations2 ir = new ImageRelations2(fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricMainImage(), fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricNameLong());
+                svgF.fillUri = ir.getUri();
+                svgF.fillPatternByURI();
+//                imageWriterTester(imageToArray(fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricMainImage()));
 //                System.out.println(svgF.fillUri.toString());
             }
             else if(jtb.getName().equals("button")){
@@ -812,6 +803,19 @@ FileFilter projectfilter = new FileNameExtensionFilter("Temporary project format
     catch(Exception e){
         System.out.println("Project read Exception: "+ e);
     }
+
+    for(int i = 0; i < p.fills.size(); i++){
+        System.out.println(i+"I: "+p.fills.get(i));
+        inner: for(int j = 0; j < fabrics_list.size(); j++){
+            System.out.println(i+"J: "+fabrics_list.get(j).getFabricNameLong());
+            if(fabrics_list.get(j).getFabricNameLong().equals(p.fills.get(i))){
+                ImageRelations2 ir = new ImageRelations2(fabrics_list.get(j).getFabricMainImage(), fabrics_list.get(j).getFabricNameLong());
+                System.out.println(p.fills.get(i)+" written");
+                break inner;
+            }
+        }
+    }
+
     Element root = svgF.document.getDocumentElement();
     Node defs = null;
     try {
@@ -879,14 +883,30 @@ FileFilter projectfilter = new FileNameExtensionFilter("Temporary project format
 }
 
 public void projectWriter(projectObject po){
-    
     project p = new project();
+    for(int i = 0; i < po.associated_fabrics.size(); i++){
+        try{
+//            System.out.println(po.associated_fabrics.get(i).fill_uri);
+            File f = new File(new URI(po.associated_fabrics.get(i).fill_uri));
+
+            for(int x = 0; x < fabrics_list.size(); x++){
+                if(fabrics_list.get(x).getFabricNameLong().equals(f.getAbsoluteFile().getName())){
+                    System.out.println("Relevant fabric found at index: "+x);
+                    p.fills.add(fabrics_list.get(x).getFabricNameLong());
+                }
+            }
+        }
+        catch(Exception e3){
+            System.out.println("The exception in ribbon test");
+        }
+    }
+    
+    
     CharArrayWriter tmp_character_array = new CharArrayWriter();
 
     for(int i = 0; i < po.patterns.size(); i++){
         pattern pt = new pattern();
         pt.pattern_name = po.patterns.get(i).pattern_name;
-
         try{
             DOMUtilities.writeNode(po.patterns.get(i).front, tmp_character_array);
             pt.front = tmp_character_array.toString();
@@ -897,7 +917,6 @@ public void projectWriter(projectObject po){
         }
         p.patterns.add(pt);
     }
-    System.out.println("OK");
 
     CharArrayWriter defs = new CharArrayWriter();
     Element defs_wrapper = svgF.document.createElementNS(SVGDOMImplementation.SVG_NAMESPACE_URI, "svg");
@@ -919,7 +938,6 @@ public void projectWriter(projectObject po){
     catch(Exception e){
         System.out.println("Defs creation exception: "+e);
     }
-
     p.defs = defs.toString();
     CharArrayWriter out = new CharArrayWriter();
 
@@ -930,7 +948,6 @@ public void projectWriter(projectObject po){
     catch(Exception e){
         System.out.println("projectWriter exception: "+e);
     }
-
     FileFilter projectfilter = new FileNameExtensionFilter("Temporary project format (.lld)", "lld");
     JFileChooser jfc = new JFileChooser();
     jfc.addChoosableFileFilter(projectfilter);
@@ -940,17 +957,14 @@ public void projectWriter(projectObject po){
     File name_file = new File(po.project_name);
     jfc.setSelectedFile(name_file);
     int result = jfc.showSaveDialog(this);
-
     System.out.println(jfc.getSelectedFile().getName());
     if(result == JFileChooser.CANCEL_OPTION) return;
     String[] path = StringUtils.split(jfc.getCurrentDirectory().getPath(), "\\");
-
     String qualified_path = path[0];
     for(int i = 1; i < path.length; i++){
         qualified_path = qualified_path+"//" + path[i];
     }
     System.out.println("Written path is"+qualified_path+"//"+jfc.getSelectedFile().getName());
-
     try{
         ObjectOutputStream objOut = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(qualified_path+"///"+jfc.getSelectedFile().getName()+".lld")));
         objOut.writeObject(p);

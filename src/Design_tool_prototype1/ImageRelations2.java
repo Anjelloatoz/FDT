@@ -7,7 +7,7 @@ import java.io.File;
 public class ImageRelations2 {
     String file_uri = "";
     ImageRelations2(BufferedImage sent_image, String name){
-        File image_output_file = new File("Temp\\"+name+" TEST");
+        File image_output_file = new File("Temp\\"+name);
         try{
             ImageIO.write(sent_image, "png", image_output_file);
         }

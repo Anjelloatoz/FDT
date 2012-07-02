@@ -80,7 +80,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         int drawing_number = 0;
 	JSVGCanvas canvas;
 	Document document;
-	private Element selected_shape;
+	public Element selected_shape;
         private Element selected_component;
         private Element selected_drag_point;
         private Element selected_point;
@@ -1577,6 +1577,78 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 	    um.getUpdateRunnableQueue().invokeLater(r);
         }
 
+        public void fillPatternByURI(){
+
+            Runnable r = new Runnable(){
+                public void run(){
+                    Element root = document.getDocumentElement();
+                    try{
+                        fill_defs = document.getElementById("pattern_defs");
+                        root.appendChild(fill_defs);
+                    }
+                    catch(Exception ed){
+                        System.out.println("pattern_defs could ot be added to the root.");
+                    }
+
+                    project_object.seekPatternByElement(selected_shape);
+
+                  
+                  if(fill_defs == null){
+                      fill_defs = document.createElementNS(svgNS, "defs");
+                      fill_defs.setAttribute("id", "pattern_defs");
+                      root.appendChild(fill_defs);
+                      p1("Fill defs didnt have children");
+                  }
+
+                  if(!selected_shape.getAttribute("fill").equals("none")){
+                       p1("in here!!");
+                       //document.removeChild(document.getElementById("fill_image_"+selected_shape.getAttribute("id")));
+                       //document.removeChild(document.getElementById("pattern_"+selected_shape.getAttribute("id")));
+                       selected_shape.setAttribute("fill", "none");
+                       fill_defs.removeChild(document.getElementById("pattern_"+selected_shape.getAttribute("id")));
+                  }
+
+                  for_loop:{ for(int i = 0; i < project_object.associated_fabrics.size(); i++){
+                      if(((Element_fill)project_object.associated_fabrics.get(i)).element.getAttribute("id").equals(selected_shape.getAttribute("id"))){
+                          ((Element_fill)project_object.associated_fabrics.get(i)).fill_uri = fillUri;
+                          break for_loop;
+                      }
+                  }
+                  Element_fill ef = new Element_fill(selected_shape, fillUri);
+                  project_object.associated_fabrics.add(ef);
+                  }
+
+
+                  Element fill_image = document.createElementNS(svgNS, "image");
+                  fill_image.setAttributeNS(XLINK_NAMESPACE_URI, "xlink:href", fillUri);
+                  fill_image.setAttributeNS(null, "id", "fill_image_"+selected_shape.getAttribute("id"));
+                  p1(fill_image.getAttribute("id"));
+                  fill_image.setAttributeNS(null, "x", "0");
+                  fill_image.setAttributeNS (null, "y", "0");
+                  fill_image.setAttributeNS(null, "width", "1.0in");
+		  fill_image.setAttributeNS(null, "height", "1.0in");
+
+                  Element pattern = document.createElementNS(svgNS, "pattern");
+                  pattern.setAttributeNS(null, "id", "pattern_"+selected_shape.getAttribute("id"));
+                  pattern.setAttributeNS(null, "patternUnits", "userSpaceOnUse");
+                  pattern.setAttributeNS(null, "width", "1.0in");
+                  pattern.setAttributeNS(null, "height", "1.0in");
+                  pattern.setAttributeNS(null, "x", "1.0in");
+                  pattern.setAttributeNS(null, "y", "1.0in");
+
+                  pattern.appendChild(fill_image);
+                  fill_defs.appendChild(pattern);
+
+
+//                  current_drawing.setAttribute("fill", "rgb("+color.getRed()+","+color.getGreen()+","+color.getBlue()+")");
+                  selected_shape.setAttribute("fill", "url(#pattern_"+selected_shape.getAttribute("id")+")");
+
+                }
+            };
+            UpdateManager um = canvas.getUpdateManager();
+	    um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
         public void elementIterator(Element e){
 
             if(e.getLocalName().equals("path")){
@@ -1701,6 +1773,17 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
             DefaultMutableTreeNode dmtn = null;
             JTree t = th.getTree();
+            System.out.println("The fill: "+selected_shape.getAttribute("fill"));
+            if(selected_shape.getAttribute("fill")!="none"){
+                Element d = document.getElementById("pattern_"+selected_shape.getAttribute("id"));
+                d.getParentNode().removeChild(d);
+                System.out.println("Pattern successfully removed");
+                for(int i = 0; i < project_object.associated_fabrics.size(); i++){
+                    if(project_object.associated_fabrics.get(i).element.getAttribute("id").equals(selected_shape.getAttribute("id"))){
+                        project_object.associated_fabrics.remove(i);
+                    }
+                }
+            }
 
             dmtn = th.seekNodeByObject(selected_shape, (DefaultMutableTreeNode)t.getModel().getRoot());
             ((DefaultTreeModel)t.getModel()).removeNodeFromParent(dmtn);

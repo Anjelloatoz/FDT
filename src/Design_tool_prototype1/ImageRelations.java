@@ -1,6 +1,7 @@
 package Design_tool_prototype1;
 
 import java.awt.*;
+import java.net.URI;
 import java.awt.image.*;
 import org.apache.batik.svggen.SVGGraphics2D;
 import org.apache.batik.swing.JSVGCanvas;
@@ -27,9 +28,11 @@ public class ImageRelations {
     Document document;
     private final String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
     static final String XLINK_NAMESPACE_URI = "http://www.w3.org/1999/xlink";
+    String uri = "";
 
     ImageRelations(BufferedImage sent_image, String name){
         DOMImplementation dom = SVGDOMImplementation.getDOMImplementation();
+        System.out.println("Width: "+sent_image.getWidth()+"Height: "+sent_image.getHeight());
         canvas = new JSVGCanvas();
         canvas.setMySize(new Dimension(sent_image.getWidth(), sent_image.getHeight()));
         canvas.setBounds(0, 0, sent_image.getWidth(), sent_image.getHeight());
@@ -54,8 +57,8 @@ public class ImageRelations {
         fill_image.setAttributeNS(XLINK_NAMESPACE_URI, "xlink:href", DATA_PROTOCOL_PNG_PREFIX+os.toString());
         fill_image.setAttributeNS(null, "x", "0");
         fill_image.setAttributeNS (null, "y", "0");
-        fill_image.setAttributeNS(null, "width", ""+sent_image.getWidth());
-        fill_image.setAttributeNS(null, "height", ""+sent_image.getHeight());
+        fill_image.setAttributeNS(null, "width", +sent_image.getWidth()+"mm");
+        fill_image.setAttributeNS(null, "height", +sent_image.getHeight()+"mm");
 
         Element root = document.getDocumentElement();
         root.appendChild(fill_image);
@@ -72,10 +75,19 @@ public class ImageRelations {
             ostream.flush();
             ostream.close();
             System.out.println("The uri of this image is: "+file.toURI());
+            System.out.println("The url of this image is: "+file.toURI().toURL());
+            uri = file.toURI().toString();
+            File fl = file.getAbsoluteFile();
+            System.out.println("The file name is: "+fl.getName());
+            URI ur = new URI(uri);
         }
 
         catch(Exception ex1){
-            System.out.println("Image Relations class: Output stream error");
+            System.out.println("Image Relations class: Output stream error"+ex1);
         }
+    }
+
+    public String getUri(){
+        return uri;
     }
 }

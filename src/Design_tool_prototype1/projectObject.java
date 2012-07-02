@@ -2,6 +2,7 @@ package Design_tool_prototype1;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import java.util.ArrayList;
 import java.io.Serializable;
 
@@ -11,7 +12,7 @@ public class projectObject implements Serializable{
     Document rear_document;
 
     ArrayList<patternObject> patterns = new ArrayList();
-    ArrayList<Element> history_elements = new ArrayList();
+    ArrayList<Element> history_elements = new ArrayList();    
 
     projectObject(Document front, Document rear){
         this.front_document = front;
@@ -42,6 +43,26 @@ public class projectObject implements Serializable{
                 removePatternObject(patterns.get(i));
                 return removed_pattern;
             }        }
+        return null;
+    }
+
+    public patternObject seekPatternByElement(Element e){
+        for(int i = 0; i < patterns.size(); i++){
+            try{
+                NodeList elements_with_same_ID = patterns.get(i).front.getElementsByTagName(e.getTagName());
+                System.out.println("There are "+elements_with_same_ID.getLength()+" elements of this type in "+patterns.get(i).pattern_name);
+
+                for(int j = 0; j < elements_with_same_ID.getLength(); j++){
+                    if(elements_with_same_ID.item(j).isEqualNode(e)){
+                        System.out.println("This is an element from "+patterns.get(i).pattern_name+" pattern object");
+                        return patterns.get(i);
+                    }
+                }
+            }
+            catch(Exception ex1){
+                System.out.println("Exception in the seek pattern");
+            }
+        }
         return null;
     }
 }
