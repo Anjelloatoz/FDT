@@ -83,6 +83,9 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     JRibbonBand dress_form_button_band;
     JRibbonBand buttons_button_band;
 
+    private DrawingBoardRule columnView;
+    private DrawingBoardRule rowView;
+
     Image image;
     java.util.List<Fabric> fabrics_list = new ArrayList<Fabric>();
     java.util.List<button> buttons_list = new ArrayList<button>();
@@ -295,12 +298,14 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
         this.getRibbon().addTask(new RibbonTask("Dress Form", dress_form_button_band));
         this.getRibbon().addTask(new RibbonTask("Buttons", buttons_button_band, button_gallery_band));
 
+        DrawingBoardFooter dbf = new DrawingBoardFooter(svgc);
+        JPanel bordfooter = dbf.getDrawingBoardFooter();
         desk = new JDesktopPane();
         iframe = new JInternalFrame("Drawing Board", true, true, true, true);
         iframe.setIconifiable(false);
         iframe.setToolTipText("Your drawings go here");
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-        iframe.setBounds(0, 0, dim.width-400, dim.height-100);
+        iframe.setBounds(0, 0, dim.width-400, dim.height-200);
         iframe.setVisible(true);
                                 
         alt = new alterStation();
@@ -310,7 +315,7 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
         toolframe.setVisible(true);
 
         pb = new paintBoard();
-        svgc = new SVGConjurer(dim, alt);
+        svgc = new SVGConjurer(dim, alt, dbf);
         svgc.rt = this;
         alt.svgc = svgc;
         alt.rt = this;
@@ -347,7 +352,17 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
         navigator_frame.setBounds(0, dim.height-380, 200, 190);
         navigator_frame.add(nv.getNavigator());
         navigator_frame.setVisible(true);
-        iframe.add(svgc.getBoard());
+        JScrollPane drawingScrollPane = new JScrollPane(svgc.getBoard());
+        columnView = new DrawingBoardRule(DrawingBoardRule.HORIZONTAL, true);
+        rowView = new DrawingBoardRule(DrawingBoardRule.VERTICAL, true);
+        columnView.setPreferredWidth(svgc.getBoard().getWidth());
+        rowView.setPreferredHeight(svgc.getBoard().getHeight());
+
+        drawingScrollPane.setColumnHeaderView(columnView);
+        drawingScrollPane.setRowHeaderView(rowView);
+        iframe.add(drawingScrollPane);
+        
+        iframe.add(bordfooter, BorderLayout.SOUTH);
 
         desk.add(iframe);
         desk.add(color_frame);

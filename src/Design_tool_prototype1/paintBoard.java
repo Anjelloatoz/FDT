@@ -233,9 +233,9 @@ public class paintBoard extends JFrame {
         EventTarget t1 = (EventTarget) doc.getElementById (element.getAttribute("id"));
         System.out.println("in the register");
         System.out.println(element.getAttribute("id"));
-        t1.addEventListener ("mouseover", new OnMouseOverCircleAction (), false);
-        t1.addEventListener ("mouseout", new mouseOut (), false);
-        t1.addEventListener ("click", new OnClickAction (), false);
+        t1.addEventListener ("mouseover", new paintBoard.OnMouseOverCircleAction (), false);
+        t1.addEventListener ("mouseout", new paintBoard.mouseOut (), false);
+        t1.addEventListener ("click", new paintBoard.OnClickAction (), false);
 
     }
 
