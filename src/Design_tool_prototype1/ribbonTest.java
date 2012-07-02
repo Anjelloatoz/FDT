@@ -54,6 +54,14 @@ import org.jvnet.flamingo.common.JCommandButton.CommandButtonKind;
 import org.jvnet.flamingo.ribbon.ui.JRibbonGallery;
 import org.jvnet.flamingo.common.icon.DecoratedResizableIcon;
 
+import bibliothek.gui.DockController;
+import bibliothek.gui.dock.DefaultDockable;
+import bibliothek.gui.dock.SplitDockStation;
+import bibliothek.gui.dock.station.split.SplitDockGrid;
+import bibliothek.extension.gui.dock.theme.BubbleTheme;
+import bibliothek.extension.gui.dock.theme.EclipseTheme;
+import bibliothek.gui.dock.themes.NoStackTheme;
+
 public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionListener{
     JDesktopPane desk;
     JInternalFrame iframe;
@@ -62,6 +70,17 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     JInternalFrame alter_frame;
     JInternalFrame control_frame;
     JInternalFrame navigator_frame;
+
+    DockController controller = new DockController();
+    DockController default_controller = new DockController();
+    SplitDockStation station = new SplitDockStation();
+    DefaultDockable drawing_dock = new DefaultDockable();
+    DefaultDockable color_dock = new DefaultDockable();
+    DefaultDockable alter_dock = new DefaultDockable();
+    DefaultDockable navigator_dock = new DefaultDockable();
+    DefaultDockable control_dock = new DefaultDockable();
+    DefaultDockable tool_dock = new DefaultDockable();
+
     JCommandToggleButton[] buttons;
     JCommandToggleButton[] button_buttons;
     JFrame frame;
@@ -130,6 +149,10 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
 
     ribbonTest(){
         super("Anjelloatoz Clothing Fashion Designer");
+        controller.add(station);
+        BubbleTheme bt = new BubbleTheme();
+        controller.setTheme(new NoStackTheme(new EclipseTheme()));
+        SplitDockGrid grid = new SplitDockGrid();
         Image frame_image;
 
         try{
@@ -367,18 +390,70 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
         
         iframe.add(bordfooter, BorderLayout.SOUTH);
 
-        desk.add(iframe);
+        
+        drawing_dock.setTitleText("Drawing Board");
+        Container drawing_container = drawing_dock.getContentPane();
+        drawing_container.add(drawingScrollPane);
+        drawing_container.add(bordfooter, BorderLayout.SOUTH);
+
+        
+        color_dock.setTitleText("Colour Pallete");
+        Container color_container = color_dock.getContentPane();
+        color_container.add(new JScrollPane(colorChooser));
+
+        
+        alter_dock.setTitleText("Alter Station");
+        Container alter_container = alter_dock.getContentPane();
+        alter_container.add(new JScrollPane(alt.getAlterStation()));
+
+        
+        navigator_dock.setTitleText("Navigator");
+        Container navigator_container = navigator_dock.getContentPane();
+        navigator_container.add(new JScrollPane(nv.getNavigator()));
+
+        
+        control_dock.setTitleText("Control Panel");
+        Container control_container = control_dock.getContentPane();
+        control_container.add(new JScrollPane(ctrlp.getControlPanel()));
+
+        tool_dock.setTitleText("Tool Board");
+        Container tool_container = tool_dock.getContentPane();
+        tool_container.add(new JScrollPane(tb.getToolbox()));
+
+        grid.addDockable(0, 0, 0.1618929133858268, 1, navigator_dock);
+        grid.addDockable(0.16582992125984253, 0, 0.4906661417322835, 1, drawing_dock);
+        grid.addDockable(0.6604330708661418, 0, 0.3395669291338582, 0.3056872037914692, color_dock);
+        grid.addDockable(0.6604330708661418, 0.31516587677725116, 0.3395669291338582, 0.2109004739336493, alter_dock);
+        
+        grid.addDockable(0.6604330708661418, 0.5355450236966826, 0.3395669291338582, 0.2772511848341231, control_dock);
+        grid.addDockable(0.6604330708661418, 0.8222748815165877, 0.3395669291338582, 0.17772511848341238, tool_dock);
+        
+        station.dropTree(grid.toTree());
+        default_controller = station.getController();
+
+/*        desk.add(iframe);
         desk.add(color_frame);
         desk.add(alter_frame);
         desk.add(navigator_frame);
         desk.add(control_frame);
         desk.add(toolframe);
-
-        this.add(desk);
+*/
+//        this.add(desk);
+        this.add(station.getComponent());
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         this.setSize(dim);
         this.setVisible(true);
+    }
+
+    public void printLocations(){
+        System.out.println("Navigator: "+station.getDockableLocationProperty(navigator_dock));
+        System.out.println("Drawing: "+station.getDockableLocationProperty(drawing_dock));
+        System.out.println("Color: "+station.getDockableLocationProperty(color_dock));
+        System.out.println("Alter: "+station.getDockableLocationProperty(alter_dock));
+        System.out.println("Control: "+station.getDockableLocationProperty(control_dock));
+        System.out.println("Tool: "+station.getDockableLocationProperty(tool_dock));
+        station.setController(default_controller);
     }
 
     public void stateChanged(ChangeEvent e) {
@@ -423,6 +498,7 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
         }
         else if(jcb.getText().equals("Print")){
             svgc.filePrinter();
+            printLocations();
         }
         }
         catch(Exception e){
@@ -526,7 +602,7 @@ public static void main(String args[])throws Exception{
         public void run() {
 
         try{
-            //UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+//            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             UIManager.setLookAndFeel("org.pushingpixels.substance.api.skin.SubstanceRavenLookAndFeel");
         ribbonTest rt = new ribbonTest();
         }
