@@ -1,6 +1,5 @@
 package Design_tool_prototype1;
 
-import java.util.*;
 import javax.swing.event.*;
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import javax.swing.plaf.basic.BasicInternalFrameUI;
@@ -8,10 +7,7 @@ import javax.swing.plaf.basic.BasicInternalFrameUI;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import java.awt.*;
 import java.awt.Toolkit;
-import java.io.*;
-import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -182,12 +178,12 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
             System.out.println("Buttons list import error "+e);
         }
 
-        RibbonApplicationMenuEntryPrimary amEntryNew = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "New", new ActionListener() {
+        RibbonApplicationMenuEntryPrimary amEntryNew = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "New", this/*new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e){
                 System.out.println("Invoked creating new document");
             }
-        }, CommandButtonKind.ACTION_ONLY);
+        }*/, CommandButtonKind.ACTION_ONLY);
 
         RibbonApplicationMenu applicationMenu = new RibbonApplicationMenu();
 	applicationMenu.addMenuEntry(amEntryNew);
@@ -241,6 +237,7 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
 
             catch(Exception e){
                 System.out.println("RibbonTest class - RibbonTest()Constructor - Button ImageIO problem: "+e);
+                System.out.println(buttons_list.get(j).getbuttonIcon());
             }
 
             java.awt.Image icon_image = image.getScaledInstance(55, 55, 10);
@@ -342,6 +339,7 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
         pb = new paintBoard();
 
         svgc = new SVGConjurer(dim, alt, dbf);
+        dbf.svgc = svgc;
         svgc.rt = this;
         alt.svgc = svgc;
         alt.rt = this;
@@ -409,7 +407,7 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
         
         navigator_dock.setTitleText("Navigator");
         Container navigator_container = navigator_dock.getContentPane();
-        navigator_container.add(new JScrollPane(nv.getNavigator()));
+//        navigator_container.add(new JScrollPane(nv.getNavigator()));
 
         
         control_dock.setTitleText("Control Panel");
@@ -495,6 +493,14 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
         else if(jcb.getText().equals("Import Button")){
             String new_button[] = new String[5];
             ImportScreen imp_scr = new ImportScreen(this, "Button", new_button);
+        }
+        else if(jcb.getText().equals("New")){
+            System.out.println("The new button pressed");
+//            patternObject po = new patternObject();
+            projectObject po = new projectObject(svgc.document, svgc.document);
+            treeHandler th = new treeHandler(po);
+            Container navigator_container = navigator_dock.getContentPane();
+            navigator_container.add(new JScrollPane(th.getTree()));
         }
         else if(jcb.getText().equals("Print")){
             svgc.filePrinter();
@@ -603,7 +609,7 @@ public static void main(String args[])throws Exception{
 
         try{
 //            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            UIManager.setLookAndFeel("org.pushingpixels.substance.api.skin.SubstanceRavenLookAndFeel");
+//            UIManager.setLookAndFeel("org.pushingpixels.substance.api.skin.SubstanceRavenLookAndFeel");
         ribbonTest rt = new ribbonTest();
         }
 

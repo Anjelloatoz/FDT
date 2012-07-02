@@ -5,6 +5,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.Point2D;
 import java.util.*;
+import javax.swing.JOptionPane;
 
 import java.awt.*;
 
@@ -32,6 +33,8 @@ import org.w3c.dom.svg.SVGDocument;
 import org.w3c.dom.svg.SVGRect;
 import org.w3c.dom.Element;
 import org.apache.batik.svggen.SVGGraphics2D;
+import org.apache.batik.svggen.SVGPath;
+import org.apache.batik.svggen.*;
 import org.apache.batik.dom.util.DOMUtilities;
 
 import java.io.File;
@@ -52,7 +55,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 	private final String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
         static final String XLINK_NAMESPACE_URI = "http://www.w3.org/1999/xlink";
 
-	// Center coordinates and radius of the most recent ball
 	private int radius = 4;
         UndoManager manager = new UndoManager();
         int shape_type_number = 0;
@@ -116,6 +118,8 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         private boolean alt = false;
         private boolean shift = false;
         private boolean delete = false;
+
+        boolean symmetric = false;
         DrawingBoardFooter dbf;
 
         UndoableAddDrawingLocation uadl;
@@ -187,15 +191,11 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 		document = dom.createDocument(svgNS, "svg", null);
                 generator = new SVGGraphics2D (document);
 
-
-		// Finally, the document is associated with the canvas
 		canvas.setDocument(document);
 	}
 
 	public void mouseClicked(MouseEvent e) {
-            if(shape_type_number != 0){
-                p2("BEGINING OF MOUSE CLICK current_drawing_locations: "+current_drawing_locations.size());
-                p2("-----------------------------------");
+            if((shape_type_number != 0) && ((!symmetric|e.getX()>222))){
                 last_location = e.getPoint();
                 compound_edit = new CompoundEdit();
 
@@ -308,7 +308,8 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 SEResizer(e.getX(), e.getY());
             }
 
-            if(edit_point_moveable){
+            if((edit_point_moveable)){
+                System.out.println(e.getX());
                 currentDrawingDrag();
             }
         }
@@ -574,7 +575,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 current_drawing.setAttributeNS (null, "id", "drawing_"+drawing_number);
                 current_drawing.setAttributeNS(null, "pathLength", "100");
                 current_drawing.setAttributeNS (null, "stroke", "black");
-                current_drawing.setAttributeNS (null, "stroke-width", "1");
+                current_drawing.setAttributeNS (null, "stroke-width", "0.4");
                 current_drawing.setAttributeNS(null, "fill", "none");
                 current_drawing.setAttributeNS(null, "d", "M "+current_drawing_locations.get(0).getX()+" "+current_drawing_locations.get(0).getY());
                 uae = new UndoableAddElement(this, current_drawing, location_list.get(1));
@@ -718,6 +719,161 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             compound_edit.addEdit(uclc);
 
 //            System.out.println("Current drawing parent is "+current_drawing.getParentNode().getLocalName()+" "+((Element)current_drawing.getParentNode()).getAttribute("id"));
+        }
+
+        public void symmetricFinishDrawing(){
+            System.out.println("In the symmetricFinishDrawing");
+            Element current_drawing = document.getElementById("drawing_"+drawing_number);
+
+            java.awt.Shape tmp_shape = null;
+            try{
+                tmp_shape = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(current_drawing.getAttributeNS(null,"d")), new GeneralPath().WIND_EVEN_ODD);
+            }
+            catch(Exception e){
+                System.out.println("symmetricFinishDrawing Exception");
+            }
+            java.awt.geom.AffineTransform at = new java.awt.geom.AffineTransform();
+            at.scale(-1, 1);
+            at.translate(-444, 0);
+
+            java.awt.Shape mirrored_shape = at.createTransformedShape(tmp_shape);
+            SVGGeneratorContext sgc = SVGGeneratorContext.createDefault(document);
+            SVGPath mirrored = new SVGPath(sgc);
+            Element tmp_element = (Element)current_drawing.cloneNode(true);
+            tmp_element.setAttribute("d", mirrored.toSVG(mirrored_shape).getAttribute("d"));
+            final Element left_element  = pathReverse(tmp_element);
+            System.out.println("The right side is :"+current_drawing.getAttribute("d"));
+            final Element root = document.getDocumentElement();
+
+            Runnable r = new Runnable(){
+                public void run(){
+                    root.appendChild(left_element);
+                }
+            };
+            UpdateManager um = canvas.getUpdateManager();
+	    um.getUpdateRunnableQueue().invokeLater(r);
+            
+            String test_d = "";
+            PathIterator pi = mirrored_shape.getPathIterator(null);
+            double[] split_path_coords = new double[6];
+            
+            Point2D begining_point = null;
+            Point2D ending_point = null;
+
+            while(!pi.isDone()){
+                int segment = pi.currentSegment(split_path_coords);
+                if(segment == pi.SEG_MOVETO){
+                    test_d = "M "+split_path_coords[0]+" "+split_path_coords[1];
+                    if(ending_point == null){
+                        ending_point = new Point2D.Double(split_path_coords[0], split_path_coords[1]);
+                    }
+                    begining_point = new Point2D.Double(split_path_coords[0], split_path_coords[1]);
+                }
+
+                if(segment == pi.SEG_LINETO){
+                    test_d = test_d+" L "+split_path_coords[0]+" "+split_path_coords[1];
+                    if(ending_point.equals(null)){
+                        ending_point = new Point2D.Double(split_path_coords[0], split_path_coords[1]);
+                    }
+                    begining_point = new Point2D.Double(split_path_coords[0], split_path_coords[1]);
+                }
+
+                if(segment == pi.SEG_CUBICTO){
+                    test_d = test_d+" C "+split_path_coords[0]+" "+split_path_coords[1]+" "+split_path_coords[2]+" "+split_path_coords[3]+" "+split_path_coords[4]+" "+split_path_coords[5];
+                    if(ending_point.equals(null)){
+                        ending_point = new Point2D.Double(split_path_coords[0], split_path_coords[1]);
+                    }
+                    begining_point = new Point2D.Double(split_path_coords[4], split_path_coords[5]);
+                }
+                pi.next();
+            }
+            System.out.println("The begining point is "+begining_point);
+            System.out.println("The ending point is "+ending_point);
+            System.out.println("The begining point is "+whole_path_locations_list.get(0));
+            System.out.println("The ending point is "+whole_path_locations_list.get(whole_path_locations_list.size()-1));
+
+            if(begining_point.getX()==whole_path_locations_list.get(0).getX() && begining_point.getY()==whole_path_locations_list.get(0).getY()){
+//                right_path.append(tmp_shape, true);
+            }
+            else{
+                JFrame f1 = new JFrame("Creating the symmetric pattern");
+            Object[] options = {"Line","Curve","Cancel"};
+            int ans = JOptionPane.showOptionDialog(f1, "Please select how the right patterns end joins with left patterns begining.", "Joining the left and right patterns", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,null,options,options[0]);
+            if(ans == 0){
+                current_drawing.setAttribute("d", current_drawing.getAttribute("d")+" L "+StringUtils.stripStart(left_element.getAttribute("d"),"M"));
+                System.out.println("After joining path is: "+current_drawing.getAttribute("d"));
+            }
+            else if(ans == 1){
+                int y = (int)whole_path_locations_list.get(whole_path_locations_list.size()-1).getY();
+                int gap = (int)((whole_path_locations_list.get(whole_path_locations_list.size()-1).getX())-begining_point.getX())/3;
+                current_drawing.setAttribute("d", current_drawing.getAttribute("d")+" C "+((whole_path_locations_list.get(whole_path_locations_list.size()-1).getX())-gap)+" "+y+" "+((whole_path_locations_list.get(whole_path_locations_list.size()-1).getX())-(gap*2))+" "+y+" "+StringUtils.stripStart(left_element.getAttribute("d"),"M"));
+                System.out.println("After joining path is: "+current_drawing.getAttribute("d"));
+            }
+            if(ending_point.getX()==whole_path_locations_list.get(0).getX() && ending_point.getY()==whole_path_locations_list.get(0).getY()){
+//                right_path.append(tmp_shape, true);
+            }
+            else{
+                f1 = new JFrame("Creating the symmetric pattern");
+            ans = JOptionPane.showOptionDialog(f1, "Please select how the right patterns is closing.", "Joining the left and right patterns", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,null,options,options[0]);
+            if(ans == 0){
+                current_drawing.setAttribute("d", current_drawing.getAttribute("d")+" L "+whole_path_locations_list.get(0).getX()+" "+whole_path_locations_list.get(0).getY());
+                System.out.println("After joining path is: "+current_drawing.getAttribute("d"));
+            }
+            else if(ans == 1){
+                int y = (int)whole_path_locations_list.get(0).getY();
+                int gap = (int)((whole_path_locations_list.get(0).getX())-ending_point.getX())/3;
+                current_drawing.setAttribute("d", current_drawing.getAttribute("d")+" C "+((ending_point.getX())+gap)+" "+y+" "+((ending_point.getX())+(gap*2))+" "+y+" "+ whole_path_locations_list.get(0).getX()+" "+ whole_path_locations_list.get(0).getY()+" ");
+                System.out.println("After joining path is: "+current_drawing.getAttribute("d"));
+            }
+            }
+            root.removeChild(left_element);
+            finishDrawing(current_drawing);
+            }
+        }        
+
+        public Element pathReverse(Element subject_element){
+            String forward_path;
+            String backward_path;
+            String chopped_backward_path;
+            String short_backward_path;
+
+            java.awt.Shape tmp_shape = null;
+            backward_path = "";
+            try{
+                tmp_shape = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(subject_element.getAttribute("d")), new GeneralPath().WIND_EVEN_ODD);
+            }
+            catch(Exception e){
+                p1("Line 764: pathReverse Error");
+            }
+
+            forward_path = "";
+            PathIterator pi = tmp_shape.getPathIterator(null);
+            double[] split_path_coords = new double[6];
+
+            while(!pi.isDone()){
+                int segment = pi.currentSegment(split_path_coords);
+                if(segment == pi.SEG_MOVETO){
+                    forward_path = "M "+split_path_coords[0]+" "+split_path_coords[1];
+                    backward_path = split_path_coords[0]+" "+split_path_coords[1];
+                }
+                if(segment == pi.SEG_LINETO){
+                    forward_path = forward_path+" L "+split_path_coords[0]+" "+split_path_coords[1];
+                    backward_path =split_path_coords[0]+" "+split_path_coords[1]+" L "+backward_path;
+//                    short_backward_path =
+                }
+                if(segment == pi.SEG_CUBICTO){
+                    forward_path = forward_path+" C "+split_path_coords[0]+" "+split_path_coords[1]+" "+split_path_coords[2]+" "+split_path_coords[3]+" "+split_path_coords[4]+" "+split_path_coords[5];
+                    backward_path = split_path_coords[4]+" "+split_path_coords[5]+" C "+split_path_coords[2]+" "+split_path_coords[3]+" "+split_path_coords[0]+" "+split_path_coords[1]+" "+backward_path;
+                }
+                pi.next();
+            }
+            chopped_backward_path = backward_path;;
+            backward_path = "M "+backward_path;
+            System.out.println("The Forward Path is "+forward_path);
+            System.out.println("The Backward Path is "+backward_path);
+            Element reversed_element = (Element)subject_element.cloneNode(false);
+            reversed_element.setAttribute("d", backward_path);
+            return reversed_element;
         }
 
         public Element setGuideImage(final String image_path, final int width, final int height){
@@ -1423,7 +1579,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 public void run(){
                     Element root = document.getDocumentElement();
                     root.removeChild(selected_shape);
-                    System.out.println("This drawing had fillings: "+selected_shape.getAttribute("fill"));
                 }
             };
             UpdateManager um = canvas.getUpdateManager();
@@ -2059,7 +2214,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
     }
 
     public void patternDrag(){
-        p2("PatternDrag called");
         Runnable r = new Runnable(){
             public void run(){
                 selected_drag_point.setAttribute("cx",mouse_point.getX()+"");
@@ -2079,14 +2233,18 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 //        p2("CurrentDrawingDrag called");
         Runnable r = new Runnable(){
             public void run(){
-                selected_drag_point.setAttribute("cx",mouse_point.getX()+"");
-                selected_drag_point.setAttribute("cy",mouse_point.getY()+"");
+                int x = (int)mouse_point.getX();
+                int y = (int)mouse_point.getY();
+                if(((!symmetric|x>222))){
+                selected_drag_point.setAttribute("cx",x+"");
+                selected_drag_point.setAttribute("cy",y+"");
                 Element current_drawing = document.getElementById("drawing_"+drawing_number);
 //                p2("Left pattern coords are: "+left_pattern_coords);
 //                p2("Mouse coords are: "+mouse_point.getX()+" "+mouse_point.getY());
 //                p2("Right pattern coords are: "+right_pattern_coords);
 //                p2("pattern D is : "+left_pattern_coords+" "+mouse_point.getX()+" "+mouse_point.getY()+" "+right_pattern_coords);
-                current_drawing.setAttribute("d", left_pattern_coords+" "+mouse_point.getX()+" "+mouse_point.getY()+" "+right_pattern_coords);
+                current_drawing.setAttribute("d", left_pattern_coords+" "+x+" "+y+" "+right_pattern_coords);
+                }
             }
         };
         UpdateManager um = canvas.getUpdateManager();
@@ -2152,12 +2310,44 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             FileWriter file = new FileWriter ("The Document.svg");
             PrintWriter writer = new PrintWriter (file);
             SVGDocument svgDoc = canvas.getSVGDocument();
-            DOMUtilities.writeDocument (svgDoc, writer);
+            DOMUtilities.writeDocument (document, writer);
             writer.close();
         }
         catch(Exception e){
             System.err.println ("IO problem: " + e.toString () );
         }
+    }
+
+    public void SymatricOn(){
+        symmetric = true;
+        Runnable r = new Runnable(){
+            public void run(){
+                Element root = document.getDocumentElement();
+                Element symmetric_line = document.createElementNS(svgNS, "line");
+                symmetric_line.setAttributeNS(null, "id", "symmetric_line");
+                symmetric_line.setAttributeNS(null, "stroke", "black");
+                symmetric_line.setAttributeNS(null, "stroke-width", "1");
+                symmetric_line.setAttribute("x1","222");
+                symmetric_line.setAttribute("y1",""+0);
+                symmetric_line.setAttribute("x2",""+222);
+                symmetric_line.setAttribute("y2",""+getWidth());
+                root.appendChild(symmetric_line);
+            }
+        };
+        UpdateManager um = canvas.getUpdateManager();
+        um.getUpdateRunnableQueue().invokeLater(r);
+    }
+
+    public void SymatricOff(){
+        symmetric = false;
+        Runnable r = new Runnable(){
+            public void run(){
+                Element root = document.getDocumentElement();
+                root.removeChild(document.getElementById("symmetric_line"));
+            }
+        };
+        UpdateManager um = canvas.getUpdateManager();
+        um.getUpdateRunnableQueue().invokeLater(r);
     }
 
     public void keyReleased(KeyEvent e) {

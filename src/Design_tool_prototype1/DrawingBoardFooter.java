@@ -18,6 +18,7 @@ public class DrawingBoardFooter extends JFrame implements ActionListener {
         JLabel pointer_x_value = new JLabel("00");
         JLabel pointer_y_value = new JLabel("00");
         JButton undo, redo;
+        JToggleButton symatric;
 
     public DrawingBoardFooter(SVGConjurer svgc){
         this.svgc = svgc;
@@ -40,8 +41,10 @@ public class DrawingBoardFooter extends JFrame implements ActionListener {
 
         undo = new JButton("", new ImageIcon("small-undo-icon.gif"));
         redo = new JButton("", new ImageIcon("small-redo-icon.gif"));
+        symatric = new JToggleButton("", new ImageIcon("symatric-icon.gif"));
         undo.setEnabled(false);
         redo.setEnabled(false);
+        symatric.addActionListener(this);
 
         undo.addActionListener(new ActionListener(){
 
@@ -82,6 +85,7 @@ public class DrawingBoardFooter extends JFrame implements ActionListener {
 
         drawingBoardFooterPanel.add(undo);
         drawingBoardFooterPanel.add(redo);
+        drawingBoardFooterPanel.add(symatric);
     }
 
     void updateButtons(){
@@ -94,6 +98,15 @@ public class DrawingBoardFooter extends JFrame implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent ae){
-
+        AbstractButton abstractButton = (AbstractButton) ae.getSource();
+        boolean selected = abstractButton.getModel().isSelected();
+        if(selected){
+            System.out.println("Selected");
+            svgc.SymatricOn();
+        }
+        else{
+            System.out.println("Not Selected");
+            svgc.SymatricOff();
+        }
     }
 }

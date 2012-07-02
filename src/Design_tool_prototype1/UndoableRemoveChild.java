@@ -20,12 +20,12 @@ public class UndoableRemoveChild extends AbstractUndoableEdit{
         this.canvas = svgc.canvas;
         Parent = parent;
         Child = child;
-        System.out.println("Came into the UndoableRemoveChild "+child.getAttribute("id"));
+//        System.out.println("Came into the UndoableRemoveChild "+child.getAttribute("id"));
 
         Runnable r = new Runnable(){
           public void run(){
 //              Parent.removeChild(Child);
-              System.out.println("in the UndoableRemoveChild: "+Child.getAttribute("id"));
+//              System.out.println("in the UndoableRemoveChild: "+Child.getAttribute("id"));
               Child.getParentNode().removeChild(Child);
           }
         };
@@ -39,7 +39,7 @@ public class UndoableRemoveChild extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
-        System.out.println("Came into the UndoableRemoveChild redo");
+//        System.out.println("Came into the UndoableRemoveChild redo");
 
         Runnable r = new Runnable(){
           public void run(){
@@ -53,7 +53,7 @@ public class UndoableRemoveChild extends AbstractUndoableEdit{
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("Came into the UndoableRemoveChild undo");
+//        System.out.println("Came into the UndoableRemoveChild undo");
 
         Runnable r = new Runnable(){
           public void run(){

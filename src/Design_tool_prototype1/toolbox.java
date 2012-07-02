@@ -46,11 +46,18 @@ public class toolbox extends JFrame implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent ae){
+        System.out.println(ae.getSource());
         if(ae.getSource().equals(cursor_bt))svgc.shape_type_number = 0;
         if(ae.getSource().equals(line_bt)) svgc.shape_type_number = 2;
         if(ae.getSource().equals(curve_bt)) svgc.shape_type_number = 4;
         if(ae.getSource().equals(bezier_bt)) svgc.patternSplitter();
-        if(ae.getSource().equals(finish)) svgc.completionAgent();
+        if(ae.getSource().equals(finish)){
+            if(svgc.symmetric){
+                svgc.symmetricFinishDrawing();
+            }
+            else
+                svgc.completionAgent();
+        }
         if(ae.getSource().equals(delete)) svgc.delete_drawing();
         if(ae.getSource().equals(drag)){
             svgc.showPoints();
