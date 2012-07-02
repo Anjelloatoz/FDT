@@ -61,7 +61,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         java.util.ArrayList<Point2D> current_drawing_locations = new ArrayList();
         java.util.ArrayList<Point2D> whole_path_locations_list = new ArrayList();
         boolean drawing_in_progress = false;
-        private int drawing_number = 0;
+        int drawing_number = 0;
 	JSVGCanvas canvas;
 	Document document;
 	private Element selected_shape;
@@ -122,6 +122,9 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         CompoundEdit compound_edit;
         UndoableReplaceList url;
         UndoableArcReplaceList uarl;
+
+        UndoableRemoveElement ure;
+        UndoableDrawingNumberDeduct udnd;
 
         public SVGConjurer(){
 
@@ -626,10 +629,13 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
               }
             };
             Element root = document.getDocumentElement();
+
+            p3("In the finish drawing location_list: "+location_list.size());
             for(int i = 0; i < location_list.size(); i++){
                 root.removeChild(location_list.get(i));
             }
 
+            p3("In the finish drawing location_coordinates_list: "+location_coordinates_list.size());
             for(int i = 0; i < location_coordinates_list.size(); i++){
                 root.removeChild(location_coordinates_list.get(i));
             }
@@ -729,8 +735,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             p2("The Split path is "+spath.getAttribute("d"));
             p2("SELECTED SHAPE IS "+selected_shape.getAttributeNS(null,"d"));
             p2("*********************************************************************************");
-            Runnable r = new Runnable(){
-                public void run(){
                     java.awt.Shape s = null;
                     boolean splitable = true;
                     Point2D split_path_begining = whole_path_locations_list.get(0);
@@ -1085,9 +1089,16 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                         Element root = document.getDocumentElement();
                         Element del = document.getElementById("svg_"+selected_shape.getAttribute("id"));
                         root.removeChild(del);
+/*                        ure = new UndoableRemoveElement(this, del);
+                        compound_edit.addEdit(ure);*/
 
                         root.removeChild(document.getElementById("drawing_"+drawing_number));
+/*                        ure = new UndoableRemoveElement(this, document.getElementById("drawing_"+drawing_number));
+                        compound_edit.addEdit(ure);*/
+
                         drawing_number = drawing_number-1;
+/*                        udnd = new UndoableDrawingNumberDeduct(this);
+                        compound_edit.addEdit(udnd);*/
                         String first_element_name = selected_shape.getAttribute("id");
 
                         Element first_drawing = document.createElementNS(svgNS, "path");
@@ -1127,10 +1138,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                         whole_path_locations_list.clear();
                         last_location = null;
                     }
-                }
-            };
-            UpdateManager um = canvas.getUpdateManager();
-	    um.getUpdateRunnableQueue().invokeLater(r);
         }
 
         private void removeElement(final Element e){
