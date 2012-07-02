@@ -9,6 +9,7 @@ import javax.swing.JOptionPane;
 import java.io.ByteArrayOutputStream;
 import org.apache.batik.util.Base64EncoderStream;
 import org.apache.batik.util.XMLResourceDescriptor;
+import org.apache.batik.util.XMLConstants;
 import org.apache.batik.dom.svg.SAXSVGDocumentFactory;
 import org.w3c.dom.Node;
 
@@ -16,6 +17,10 @@ import org.w3c.dom.Node;
 //import org.apache.batik.ext.awt.image.codec.PNGImageEncoder;
 import org.apache.batik.ext.awt.image.codec.util.ImageEncoder;
 import org.apache.batik.ext.awt.image.codec.png.PNGImageEncoder;
+import org.w3c.dom.NodeList;
+
+import java.awt.Font;
+import java.awt.GraphicsEnvironment;
 
 import java.awt.*;
 import java.awt.image.*;
@@ -27,6 +32,8 @@ import java.awt.*;
 import org.w3c.dom.events.Event;
 import org.w3c.dom.events.EventListener;
 import org.w3c.dom.events.EventTarget;
+import org.w3c.dom.Text;
+
 
 import org.apache.commons.lang.StringUtils;
 
@@ -70,7 +77,7 @@ import java.io.CharArrayWriter;
 public class SVGConjurer extends JFrame implements ChangeListener, MouseListener, MouseMotionListener, KeyListener {
 	static final long serialVersionUID = 333333;
 	// Namespace string, to be used throughout the class
-	private final String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
+	final String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
         static final String XLINK_NAMESPACE_URI = "http://www.w3.org/1999/xlink";
 
 	private int radius = 4;
@@ -91,6 +98,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         private Element selected_point;
         private Element selected_button_box;
         private Element clipboard_element;
+        Element selected_text;
         Element fill_defs = null;
         Color color = new Color(0,0,0);
         private int scl = 10;
@@ -138,6 +146,8 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         private boolean alt = false;
         private boolean shift = false;
         private boolean delete = false;
+
+        boolean textPath = false;
 
         boolean symmetric = false;
         DrawingBoardFooter dbf;
@@ -210,6 +220,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 canvas.setCursor(paint_cursor);
                 canvas.setRecenterOnResize(true);
                 canvas.setDisableInteractions(true);
+                System.out.println("The debugging option : "+canvas.getDebugGraphicsOptions());
 
 		panel.setLayout(new BorderLayout());
 		panel.add("North", p);
@@ -373,8 +384,45 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 	public void stateChanged(ChangeEvent e) {
 	}
 
+        public void testText(final String font_name){
+//            System.out.println("Selected Text is "+font_name);
+            Runnable r = new Runnable(){
+                public void run(){
+                    try{
+                        selected_text.setAttributeNS (null, "font-family", font_name+", Arial, sans-serif");
+                    }
+                    catch(Exception e){
+                        System.out.println("Exception occured in the set text method.");
+                    }
+                }
+            };
+            UpdateManager um = canvas.getUpdateManager();
+            um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+        public void testTextColor(final Color text_color){
+            Runnable r = new Runnable(){
+                public void run(){
+                    selected_text.setAttribute("fill", "rgb("+text_color.getRed()+","+text_color.getGreen()+","+text_color.getBlue()+")");
+                }
+            };
+            UpdateManager um = canvas.getUpdateManager();
+            um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+        public void testSetText(final String text){
+            Runnable r = new Runnable(){
+                public void run(){
+                    ((Text)(selected_text.getFirstChild().getFirstChild())).setData(text);
+                }
+            };
+            UpdateManager um = canvas.getUpdateManager();
+            um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
         private void drawAxises(){
             axises = true;
+
             Runnable r = new Runnable() {
 			public void run() {
 				Element root = document.getDocumentElement();
@@ -526,7 +574,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         private void drawEditPoint(final double x, final double y, final int rad, final String fill_color){
-            Runnable r = new Runnable() {
+            Runnable r = new Runnable(){
 			public void run() {
 				Element root = document.getDocumentElement();
 				Element location = document.createElementNS(svgNS, "circle");
@@ -593,6 +641,10 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             dbf.manager = manager;
             dbf.updateButtons();
             p3("18. current_drawing_locations: "+current_drawing_locations.size());
+            if(textPath){
+                setTextPath(current_drawing);
+                return;
+            }
         }
 
         private void drawArc(){
@@ -623,6 +675,10 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             dbf.manager = manager;
             dbf.updateButtons();
 //            System.out.println("End of the arc: "+current_drawing_locations.size());
+            if(textPath){
+                setTextPath(current_drawing);
+                return;
+            }
         }
 
         public void removePrediction(){
@@ -633,6 +689,10 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         public void completionAgent(){
             p4("Came into the Completion agent");
             Element current_drawing = document.getElementById("drawing_"+project_object.patterns.size());
+            if(textPath){
+                setTextPath(current_drawing);
+                return;
+            }
             compound_edit = new CompoundEdit();
             finishDrawing(null, current_drawing);
             compound_edit.end();
@@ -669,22 +729,21 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                   if(destination_container == null){
                       
                       patternObject po = new patternObject();
-                      po.front = document.createElementNS(svgNS, "svg");
+                      po.front = rt.svgF.document.createElementNS(svgNS, "svg");
                       po.front.setAttribute("id", "frontAnjelloatoz@gmail.com");
                       po.rear = rt.svgR.document.createElementNS(svgNS, "svg");
                       po.rear.setAttribute("id", "rearAnjelloatoz@gmail.com");
-              //        Element root = document.getDocumentElement();
-                      root.appendChild(po.front);
+//                      root.appendChild(po.front);
+                      Element Root = rt.svgF.document.getDocumentElement();
+                      Root.appendChild(po.front);
                       Element reverseRoot = rt.svgR.document.getDocumentElement();
                       reverseRoot.appendChild(po.rear);
                       if(IDENTIFIER.equals("front")){                          
                           po.front.appendChild(svg_element);
                           
                       }
-                      else{
-                          
-                          po.rear.appendChild(svg_element);
-                          
+                      else{                          
+                          po.rear.appendChild(svg_element);                          
                       }
 /*                      uac = new UndoableAppendChild(this, root, po.front);
                       compound_edit.addEdit(uac);
@@ -762,59 +821,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             root.appendChild(new_container);
             refresh();
             th.refreshTree(project_object, rt);
-        }
-
-        public Element createNewLayer(Element element, String doc_id){
-
-            if(element.getOwnerDocument().isSameNode(rt.svgF.document)){
-                System.out.println("The element is a node os svgF");
-            }
-            else if(element.getOwnerDocument().isSameNode(rt.svgR.document)){
-                System.out.println("The element is a node os svgR");
-            }
-
-            Document tmp_document = null;
-            Document first_document = null;
-            JSVGCanvas tmp_canvas = null;
-            if(doc_id.equals("frontAnjelloatoz@gmail.com")){
-                tmp_document = rt.svgF.document;
-                first_document = rt.svgR.document;
-                tmp_canvas = rt.svgF.canvas;
-                System.out.println("tmp_document is Front");
-            }
-            else if(doc_id.equals("rearAnjelloatoz@gmail.com")){
-                tmp_document = rt.svgR.document;
-                first_document = rt.svgF.document;
-                tmp_canvas = rt.svgR.canvas;
-                System.out.println("tmp_document is Rear");
-            }
-            
-            CharArrayWriter tmp_element_holder = new CharArrayWriter();
-
-            try{
-                Element tmp_container = first_document.createElementNS(svgNS, "svg");
-                tmp_container.appendChild(element);
-                DOMUtilities.writeNode(tmp_container, tmp_element_holder);
-                System.out.println("787: The element successfully written.");
-            }
-            catch(Exception ex1){
-                System.out.println("Line 783, SVGConjurer Exception "+ex1);
-            }
-            String parser = XMLResourceDescriptor.getXMLParserClassName();
-            SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parser);
-            Node reborn_node = null;
-            Element container = tmp_document.createElementNS(svgNS, "svg");
-            try{
-                reborn_node = DOMUtilities.parseXML(tmp_element_holder.toString(), tmp_document,tmp_canvas.getURI(), null, null,f);
-                System.out.println("After creating the reborn_node its grand child is: "+reborn_node.getFirstChild().getFirstChild().getLocalName());
-                container.appendChild(reborn_node.getFirstChild().getFirstChild());
-                registerPatternListeners((Element)container.getFirstChild());
-                System.out.println("Reborn_node successfully appended to the new container.");
-            }
-            catch(Exception ex2){
-                System.out.println("SVGConjurer 803: "+ex2);
-            }
-            return container;
         }
 
         public void addNewPattern(){
@@ -1652,10 +1658,16 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         public void fillPatternByURI(){
-
-            Runnable r = new Runnable(){
-                public void run(){
-                    Element root = document.getDocumentElement();
+            Document foreign_doc = null;
+            if(document.isSameNode(rt.svgF.document)){
+                System.out.println("This is the front");
+                foreign_doc = rt.svgR.document;
+            }
+            else if(document.isSameNode(rt.svgR.document)){
+                System.out.println("This is the rear");
+                foreign_doc = rt.svgF.document;
+            }
+            Element root = document.getDocumentElement();
                     try{
                         fill_defs = document.getElementById("pattern_defs");
                         root.appendChild(fill_defs);
@@ -1665,7 +1677,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                     }
 
                     associated_pattern = project_object.seekPatternByElement(selected_shape);
-                  
+
                   if(fill_defs == null){
                       fill_defs = document.createElementNS(svgNS, "defs");
                       fill_defs.setAttribute("id", "pattern_defs");
@@ -1716,10 +1728,26 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 //                  current_drawing.setAttribute("fill", "rgb("+color.getRed()+","+color.getGreen()+","+color.getBlue()+")");
                   selected_shape.setAttribute("fill", "url(#pattern_"+selected_shape.getAttribute("id")+")");
 
+            Runnable r = new Runnable(){
+                public void run(){
+                    
                 }
             };
             UpdateManager um = canvas.getUpdateManager();
 	    um.getUpdateRunnableQueue().invokeLater(r);
+
+            Element foreign_root = foreign_doc.getDocumentElement();
+            ElementLocalizer el = new ElementLocalizer(fill_defs.getOwnerDocument(), foreign_root, fill_defs, rt.svgF, rt.svgR);
+
+            try{
+                foreign_doc.removeChild(foreign_doc.getElementById("pattern_defs"));
+            }
+            catch(Exception ed){
+                System.out.println("1686: pattern_defs could ot be removed from the root.");
+            }
+            System.out.println("The added element is "+((Element)el.container.getFirstChild()).getAttribute("id"));
+            foreign_root.appendChild(el.container.getFirstChild());
+            
         }
 
         public void elementIterator(Element e){
@@ -1946,10 +1974,17 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
     
     public class OnEditPointMouseDownAction implements EventListener {
      public void handleEvent (Event evt) {
+         System.out.println("In the OnEditPointMouseDownAction");
          EventTarget tt = evt.getTarget();
          Element e1 = (Element)tt;
          selected_drag_point = e1;
          e1.setAttribute ("fill", "red");
+         String x_value = e1.getAttribute("cx");
+         String y_value = e1.getAttribute("cy");
+         String postfix = "";
+         if(x_value.contains(".")){
+             postfix = ".";
+         }
          double x = Integer.parseInt(StringUtils.substringBefore(e1.getAttribute("cx"),"."));
          double y = Integer.parseInt(StringUtils.substringBefore(e1.getAttribute("cy"),"."));
          before_drag_edit_point = new Point2D.Double(x, y);
@@ -1963,10 +1998,11 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
          prev_pattern_coords = current_drawing.getAttribute("d");
 //         System.out.println("Selected drag point: "+x+" "+y);
          p2("Selected drag point untruncated: "+e1.getAttribute("cx")+" "+e1.getAttribute("cy"));
+         System.out.println("The split point is "+ x+" "+y);
          left_pattern_coords = StringUtils.substringBefore(current_drawing.getAttribute("d"), x+" "+y);
-         p2("left_pattern_coords: "+left_pattern_coords);
+         System.out.println("left_pattern_coords: "+left_pattern_coords);
          right_pattern_coords = StringUtils.substringAfter(current_drawing.getAttribute("d"), x+" "+y+" ");
-         p2("right_pattern_coords: "+right_pattern_coords);
+         System.out.println("right_pattern_coords: "+right_pattern_coords);
          edit_point_moveable = true;
          canvas.setCursor(dflt_cursor);
         }
@@ -2340,6 +2376,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
         public class OnDragPointClickAction implements EventListener {
         public void handleEvent (Event evt) {
+            System.out.println("In the OnDragPointClickAction");
          EventTarget tt = evt.getTarget();
          Element e1 = (Element)tt;
          e1.setAttribute ("fill", "red");
@@ -2516,6 +2553,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
     }
 
     public void patternDrag(){
+        System.out.println("Pattern drag called");
         Runnable r = new Runnable(){
             public void run(){
                 selected_drag_point.setAttribute("cx",mouse_point.getX()+"");
@@ -2547,6 +2585,13 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 //                p2("Right pattern coords are: "+right_pattern_coords);
 //                p2("pattern D is : "+left_pattern_coords+" "+mouse_point.getX()+" "+mouse_point.getY()+" "+right_pattern_coords);
                 current_drawing.setAttribute("d", left_pattern_coords+" "+x+" "+y+" "+right_pattern_coords);
+                System.out.println("The left_pattern_coord is: "+ left_pattern_coords);
+                System.out.println("The middle is: "+ x+" "+y);
+                System.out.println("The right_pattern_coord is: "+right_pattern_coords);
+                System.out.println("The last path is: "+ left_pattern_coords+" "+x+" "+y+" "+right_pattern_coords);
+                if(textPath){
+                    document.getElementById(selected_text.getAttribute("id")+"_textPath").setAttribute("d", left_pattern_coords+" "+x+" "+y+" "+right_pattern_coords);
+                }
                 }
             }
         };
@@ -2625,6 +2670,69 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
     public void transcoder(JSVGCanvas transcode_canvas, char format){
 
+    }
+
+    public void setTextElement(){
+        final Element textElement = document.createElementNS (svgNS,"text");
+        
+        NodeList nl = ((Element)selected_shape.getParentNode()).getElementsByTagName("text");
+        System.out.println("The "+selected_shape.getAttribute("id")+" has "+nl.getLength()+" text elements.");
+
+        SVGLocatableSupport ls = new SVGLocatableSupport();
+        SVGRect rect = ls.getBBox(selected_shape);
+
+        textElement.setAttribute("id", "text_"+nl.getLength());
+//        textElement.setAttributeNS (null, "x", ""+rect.getX());
+//        textElement.setAttributeNS (null, "y", ""+rect.getY());
+        textElement.setAttributeNS (null, "font-size", "40");
+        textElement.setAttributeNS (null, "fill", "slateblue");
+        textElement.setAttributeNS (null, "font-family", "Arial"+", Arial, sans-serif");
+        selected_shape.getParentNode().appendChild(textElement);
+        selected_text = textElement;
+
+        Runnable r = new Runnable(){
+            public void run(){}
+        };
+        UpdateManager um = canvas.getUpdateManager();
+        um.getUpdateRunnableQueue().invokeLater(r);
+    }
+
+    public void setTextPath(Element element){
+        System.out.println("Sent element: "+element.getAttribute("id"));
+        Element text_defs = null;
+        try{
+            text_defs = document.getElementById("text_defs");
+            if(text_defs == null){
+                text_defs = document.createElementNS(svgNS, "defs");
+                text_defs.setAttributeNS(svgNS, "id", "text_defs");
+                document.getDocumentElement().appendChild(text_defs);
+                System.out.println("text_defs appended");
+            }
+        }
+        catch(Exception e){
+            System.out.println("Came into the catch");
+            text_defs = document.createElementNS(svgNS, "defs");
+            text_defs.setAttributeNS(svgNS, "id", "text_defs");
+            document.getDocumentElement().appendChild(text_defs);
+            System.out.println("text_defs appended");
+        }
+//        element.setAttribute("id", selected_text.getAttribute("id")+"_textPath");
+        if(selected_text.getFirstChild()==null){
+            Element path_element = (Element)element.cloneNode(true);
+            path_element.setAttribute("id", selected_text.getAttribute("id")+"_textPath");
+            text_defs.appendChild(path_element);
+            System.out.println("Elements D is: "+element.getAttribute("d"));
+            System.out.println("path_elements D is: "+path_element.getAttribute("d"));
+            Element textPath = document.createElementNS(svgNS, "textPath");
+            textPath.setAttributeNS(XMLConstants.XLINK_NAMESPACE_URI, "href", "#"+path_element.getAttribute("id"));
+            Text text_element = document.createTextNode("Sample Text");
+            textPath.appendChild(text_element);
+            selected_text.appendChild(textPath);
+            System.out.println("The expected target is "+selected_text.getFirstChild().getFirstChild().getTextContent());
+        }
+        else{
+            document.getElementById(selected_text.getAttribute("id")+"_textPath").setAttribute("d", element.getAttribute("d"));
+        }
     }
 
     public SVGRect BoundryFinder(Element element, SVGRect rect){
@@ -2805,6 +2913,10 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
     }
 
     public void refresh(){
+        org.w3c.dom.NodeList nl = document.getElementsByTagName("path");
+        for(int i = 0; i < nl.getLength(); i++){
+            registerPatternListeners((Element)nl.item(i));
+        }
         Runnable r = new Runnable(){
           public void run(){}
         };

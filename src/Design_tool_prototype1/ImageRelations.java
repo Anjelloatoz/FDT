@@ -40,9 +40,7 @@ public class ImageRelations {
 
     ImageRelations(Element element, String name, SVGConjurer svgc){
         Element local_element = (Element)element.cloneNode(true);
-
         SVGRect rect = svgc.BoundryFinder(element, null);
-
         elementProcessor(local_element, rect);
 
         this.InitializeDocument();

@@ -41,6 +41,7 @@ public class patternPackage implements Serializable{
         this.ptrn = new pattern();
         ptrn.pattern_name = pattern_object.pattern_name;
         ptrn.front = this.getTextFromNode(patternCleaner(pattern_object.front));
+        ptrn.rear = this.getTextFromNode(patternCleaner(pattern_object.rear));
 //        populatePatternFills(pattern_object.associated_fabrics, ptrn.fills, readFabricsList());
 
     }
@@ -53,7 +54,7 @@ public class patternPackage implements Serializable{
         }
         else{
             if(element.getLocalName().equals("path")){
-                element.setAttribute("fill", "green");
+                element.setAttribute("fill", "white");
             }
         }
         return element;

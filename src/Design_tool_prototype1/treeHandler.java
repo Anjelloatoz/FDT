@@ -106,7 +106,7 @@ public class treeHandler implements ActionListener, MouseListener{
             history_node.add(new IconNode(project.history_elements.get(i)));
         }
 
-        tree = new DnDJTree(this.svgc);
+        tree = new DnDJTree(rt);
         DefaultTreeModel mod = new DefaultTreeModel(project_node);
         tree.setModel(mod);
         tree.setCellRenderer(new NavigatorTreeCellRenderer());
@@ -207,7 +207,9 @@ public class treeHandler implements ActionListener, MouseListener{
         else if(ae.getActionCommand().equals("drawing_duplicate")){
             Element duplicate = (Element)selected_element.cloneNode(true);
             duplicate.setAttribute("id", "copy_of_"+selected_element.getAttribute("id"));
-            selected_element.getParentNode().getParentNode().appendChild(svgc.createNewLayer(duplicate, null));
+            ElementLocalizer el = new ElementLocalizer((Element)selected_element.getParentNode().getParentNode(), duplicate, rt.svgF, rt.svgR);
+//            station_element.appendChild(el.container);
+            selected_element.getParentNode().getParentNode().appendChild(el.container);
             DefaultMutableTreeNode current_node = (DefaultMutableTreeNode)selPath.getLastPathComponent();
             ((DefaultTreeModel)tree.getModel()).insertNodeInto(new IconNode(duplicate), (IconNode)current_node.getParent(), current_node.getParent().getIndex(current_node)+1);
             tree.repaint();
@@ -236,8 +238,15 @@ public class treeHandler implements ActionListener, MouseListener{
             DefaultMutableTreeNode clicked_node = (DefaultMutableTreeNode)tree.getSelectionPath().getLastPathComponent();
             try{
                 Element clicked_element = (Element)clicked_node.getUserObject();
-                svgc.setSelectedDrawing(clicked_element);
-                svgc.refresh();
+                rt.selectedSVGC.setSelectedDrawing(clicked_element);
+                rt.selectedSVGC.refresh();
+                System.out.println("This node has: "+clicked_node.getUserObject());
+                if(clicked_element.getOwnerDocument().isSameNode(rt.svgF.document)){
+                    System.out.println("This element is from the front document.");
+                }
+                if(clicked_element.getOwnerDocument().isSameNode(rt.svgR.document)){
+                    System.out.println("This element is from the rear document.");
+                }
             }
             catch(Exception e2){
                 System.out.println("Not an element"+e2);

@@ -52,10 +52,16 @@ import javax.swing.colorchooser.ColorSelectionModel;
 import javax.imageio.*;
 import java.io.*;
 
+import java.awt.Font;
+import java.awt.GraphicsEnvironment;
+
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
+import javax.swing.border.*;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyListener;
+import java.awt.event.KeyEvent;
 import org.jvnet.flamingo.common.*;
 import org.jvnet.flamingo.ribbon.*;
 import org.jvnet.flamingo.common.icon.EmptyResizableIcon;
@@ -84,7 +90,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
 
-public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionListener{
+public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionListener, KeyListener{
     JDesktopPane desk;
     JInternalFrame iframe;
     JInternalFrame toolframe;
@@ -96,6 +102,9 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     JTabbedPane drawing_board_tabbs = new JTabbedPane();
     Container drawing_container;
     JPanel bordfooter;
+    SVGConjurer selectedSVGC;
+
+    JTextArea text_type_area = new JTextArea(80, 20);
 
     DockController controller = new DockController();
     DockController default_controller = new DockController();
@@ -137,6 +146,9 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     JRibbonBand pattern_controls_band;
     JRibbonBand pattern_gallery_band;
 
+    JRibbonBand text_controls_band;
+    JRibbonBand text_entry_band;
+
     private DrawingBoardRule columnView;
     private DrawingBoardRule rowView;
 
@@ -149,11 +161,12 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
 
     Container navigator_container;
 
-    static SplashScreen mySplash;                   // instantiated by JVM we use it to get graphics
-    static Graphics2D splashGraphics;               // graphics context for overlay of the splash image
-    static Rectangle2D.Double splashTextArea;       // area where we draw the text
-    static Rectangle2D.Double splashProgressArea;   // area where we draw the progress bar
+    static SplashScreen mySplash;
+    static Graphics2D splashGraphics;
+    static Rectangle2D.Double splashTextArea;
+    static Rectangle2D.Double splashProgressArea;
     static Font font;
+    Font[] fnt;
 
     RibbonApplicationMenuEntryPrimary amEntryNew;
     RibbonApplicationMenuEntryPrimary amEntryOpen;
@@ -168,7 +181,6 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
 
     private static class TopLeftDecoration implements DecoratedResizableIcon.IconDecorator {
         int number;
-
         public TopLeftDecoration(int number){
             this.number = number;
         }
@@ -212,6 +224,10 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
         controller.setTheme(new NoStackTheme(new EclipseTheme()));
         SplitDockGrid grid = new SplitDockGrid();
         increaseSplash();
+
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        ge.getAllFonts();
+        fnt= ge.getAllFonts();
 
         /**---- Setting the Main Icon ----**/
         Image frame_image;
@@ -389,6 +405,25 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
         buttons_controls_band.setResizePolicies(CoreRibbonResizePolicies.getCorePoliciesRestrictive(texture_gallery_band));
         /**---- Finish Assigning the Button Band controls ----**/
 
+        /**---- Assigning the Texture Controls ----**/
+        text_controls_band = new JRibbonBand("Select Font", new EmptyResizableIcon(32));
+        Object[] font_names = new Object[fnt.length];
+        for(int x = 0; x < fnt.length; x++){
+            font_names[x] = fnt[x].getFontName();
+        }
+        JComboBox fonts_box = new JComboBox(font_names);
+        fonts_box.addActionListener(this);
+        JRibbonComponent games = new JRibbonComponent(new EmptyResizableIcon(32), "Fonts", fonts_box);
+        text_controls_band.addRibbonComponent(games);
+
+        text_type_area.addKeyListener(this);
+        text_type_area.setForeground(Color.CYAN);
+        text_type_area.setBackground(Color.red);
+        text_entry_band = new JRibbonBand("Enter the text", new EmptyResizableIcon(32));
+        text_entry_band.addRibbonComponent(new JRibbonComponent(new EmptyResizableIcon(32), "", text_type_area));
+        text_entry_band.setMaximumSize(new Dimension(100, 30));
+        /**---- Finished Assigning the Texture Controls ----**/
+
         /**---- Assigning the Button Gallery ----**/
         button_gallery_band = new JRibbonBand("Button Gallery", new EmptyResizableIcon(32));
         java.util.List<StringValuePair<java.util.List<JCommandToggleButton>>> button_galleryButtons = new ArrayList<StringValuePair<java.util.List<JCommandToggleButton>>>();
@@ -426,24 +461,28 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
         this.getRibbon().addTask(new RibbonTask("Dress Form", dress_form_controls_band));
         this.getRibbon().addTask(new RibbonTask("Buttons", buttons_controls_band, button_gallery_band));
         this.getRibbon().addTask(new RibbonTask("Patterns", pattern_controls_band, pattern_gallery_band));
+        this.getRibbon().addTask(new RibbonTask("Text", text_controls_band, text_entry_band));
 
         dim = Toolkit.getDefaultToolkit().getScreenSize();
         dbf = new DrawingBoardFooter(svgF);
         bordfooter = dbf.getDrawingBoardFooter();
-increaseSplash();
+        increaseSplash();
+
         desk = new JDesktopPane();
         iframe = new JInternalFrame("Drawing Board", true, true, true, true);
         iframe.setIconifiable(false);
-increaseSplash();
-        iframe.setToolTipText("Your drawings go here");
+        increaseSplash();
 
+        iframe.setToolTipText("Your drawings go here");
         iframe.setBounds(0, 0, dim.width-400, dim.height-200);
         iframe.setVisible(true);
-increaseSplash();
-splashText("Loading the alter station");
+        increaseSplash();
+
+        splashText("Loading the alter station");
 
         alt = new alterStation();
-splashText("Loading the tool board");
+
+        splashText("Loading the tool board");
         toolframe = new JInternalFrame("Tool Board", true, true, true, true);
         toolframe.setToolTipText("Drawing tools");
 increaseSplash();
@@ -459,6 +498,7 @@ splashText("Initializing drawing canvases");
         svgF.rt = this;
         svgR.rt = this;
         dbf.svgc = svgF;
+        selectedSVGC = svgF;
 
 increaseSplash();
 
@@ -468,7 +508,7 @@ increaseSplash();
         pb.alt = alt;
         pb.nv = nv;
 increaseSplash();
-        tb = new toolbox(svgF);
+        tb = new toolbox(svgF, this);
         toolframe.add(tb.getToolbox());
 splashText("Loading the color palette");
         colorChooser = new JColorChooser();
@@ -601,19 +641,36 @@ increaseSplash();
             if(jtp.getSelectedIndex()==1){
                 tb.svgc = svgR;
                 ctrlp.svgc = svgR;
+                selectedSVGC = svgR;
             }
             else{
                 tb.svgc = svgF;
                 ctrlp.svgc = svgF;
+                selectedSVGC = svgF;
             }
         }
         catch(Exception ex1){
 
         }
-        svgF.color = colorChooser.getColor();
-        svgR.color = colorChooser.getColor();
+//        svgF.color = colorChooser.getColor();
+//        svgR.color = colorChooser.getColor();
+        selectedSVGC.testTextColor(colorChooser.getColor());
       }
     public void actionPerformed(ActionEvent ae){
+
+        try{
+            if(ae.getActionCommand().equals("comboBoxChanged")){
+                JComboBox jcb = (JComboBox)ae.getSource();
+                selectedSVGC.testText(jcb.getSelectedItem().toString());
+                Font f = fnt[jcb.getSelectedIndex()];
+
+                return;
+            }
+        }
+        catch(Exception ee){
+            System.out.print("ribbon test ActionPerformed");
+        }
+        
         try{
         JCommandButton jcb = (JCommandButton)ae.getSource();
 
@@ -705,8 +762,8 @@ increaseSplash();
                 int bt_num = Integer.parseInt(bt_txt[bt_txt.length-1]);
 
                 ImageRelations2 ir = new ImageRelations2(fabrics_list.get(bt_num).getFabricMainImage(), fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricNameLong());
-                svgF.fillUri = ir.getUri();
-                svgF.fillPatternByURI();
+                selectedSVGC.fillUri = ir.getUri();
+                selectedSVGC.fillPatternByURI();
             }
             else if(jtb.getName().contains("button")){
                 String[] bt_txt = jtb.getName().split(" ");
@@ -721,6 +778,22 @@ increaseSplash();
 
                 readPattern(pattern_list.get(bt_num).ptrn);
             }
+        }
+    }
+
+    public void keyReleased(KeyEvent e) {
+        if(text_type_area.hasFocus()){
+            selectedSVGC.testSetText(text_type_area.getText());
+        }
+    }
+    public void keyPressed(KeyEvent e) {
+        if(text_type_area.hasFocus()){
+            selectedSVGC.testSetText(text_type_area.getText());
+        }
+    }
+    public void keyTyped(KeyEvent e) {
+        if(text_type_area.hasFocus()){
+            selectedSVGC.testSetText(text_type_area.getText());
         }
     }
 
@@ -899,20 +972,24 @@ public void projectReader(){
 
     Element root = svgF.document.getDocumentElement();
     Node defs = null;
+    Node defs2 = null;
     try {
       String parser = XMLResourceDescriptor.getXMLParserClassName();
       SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parser);
 //      System.out.println("p.defs is: "+p.defs);
       defs = DOMUtilities.parseXML(p.defs, svgF.document,svgF.canvas.getURI(), null, null,f);
+      defs2 = DOMUtilities.parseXML(p.defs, svgR.document,svgR.canvas.getURI(), null, null,f);
     }
     catch( Exception ex ){
         ex.printStackTrace();
     }
 
     try{
-        Element e = svgF.document.createElement("svg");
+//        Element e = svgF.document.createElement("svg");
+//        Element e2 = svgR.document.createElement("svg");
 //        e.appendChild(defs);
         root.appendChild(defs.getFirstChild());
+        svgR.document.getDocumentElement().appendChild(defs2.getFirstChild());
     }
     catch(Exception ee){
         System.out.append("ee error: "+ee);
@@ -958,22 +1035,32 @@ public void projectReader(){
 
         try {
             Node ef = null;
+            Node er = null;
             try{
                 ef = DOMUtilities.parseXML(p.patterns.get(i).front, svgF.document,svgF.canvas.getURI(), null, null,f);
+                er = DOMUtilities.parseXML(p.patterns.get(i).rear, svgR.document,svgR.canvas.getURI(), null, null,f);
             }
             catch(Exception ee){
                 System.out.println("Read exception is: "+ee);
             }
             Element el = svgF.document.createElement("svg");
             el.appendChild(ef);
+            Element em = svgR.document.createElement("svg");
+            em.appendChild(er);
 
             ptrn.front = el;
+            ptrn.rear = em;
             Element element1 = (Element)ptrn.front.getFirstChild();
+            Element element2 = (Element)ptrn.rear.getFirstChild();
             ptrn.front = null;
+            ptrn.rear = null;
             ptrn.front = element1;
+            ptrn.rear = element2;
 
             root.appendChild(ptrn.front);
+            svgR.document.getDocumentElement().appendChild(ptrn.rear);
             svgF.elementIterator(ptrn.front);
+            svgR.elementIterator(ptrn.rear);
         }
 
         catch(Exception ex){
@@ -996,6 +1083,7 @@ public void projectReader(){
     setVisible(true);
     setBoards();
     svgF.refresh();
+    svgR.refresh();
 }
 
 private void readPattern(pattern p){
@@ -1006,22 +1094,32 @@ private void readPattern(pattern p){
 
     try{
         Node ef = null;
+        Node er = null;
         try{
             ef = DOMUtilities.parseXML(p.front, svgF.document,svgF.canvas.getURI(), null, null,f);
+            er = DOMUtilities.parseXML(p.rear, svgR.document,svgR.canvas.getURI(), null, null,f);
         }
         catch(Exception ee){
-            System.out.println("966 Read exception is: "+ee);
+            System.out.println("1034 Read exception is: "+ee);
         }
 
         Element el = svgF.document.createElement("svg");
         el.appendChild(ef);
+        Element em = svgR.document.createElement("svg");
+        em.appendChild(er);
         ptrn.front = el;
+        ptrn.rear = em;
         Element element1 = (Element)ptrn.front.getFirstChild();
+        Element element2 = (Element)ptrn.rear.getFirstChild();
         ptrn.front = null;
         ptrn.front = element1;
+        ptrn.rear = null;
+        ptrn.rear = element2;
         Element root = svgF.document.getDocumentElement();
         root.appendChild(ptrn.front);
+        svgR.document.getDocumentElement().appendChild(ptrn.rear);
         svgF.elementIterator(ptrn.front);
+        svgR.elementIterator(ptrn.rear);
     }
 
     catch(Exception ex){
@@ -1039,10 +1137,13 @@ private void readPattern(pattern p){
     navigator_container = navigator_dock.getContentPane();
     navigator_container.add(new JScrollPane(th.getTree()));
     svgF.project_object = project_obj;
+    svgF.project_object = project_obj;
     svgF.th = th;
+    svgR.th = th;
     setVisible(true);
     setBoards();
     svgF.refresh();
+    svgR.refresh();
 }
 
 public void projectWriter(projectObject po){
@@ -1068,10 +1169,13 @@ public void projectWriter(projectObject po){
         }
     }
         CharArrayWriter tmp_character_array = new CharArrayWriter();
+        CharArrayWriter tmp_character_array2 = new CharArrayWriter();
         pt.pattern_name = po.patterns.get(i).pattern_name;
         try{
             DOMUtilities.writeNode(po.patterns.get(i).front, tmp_character_array);
             pt.front = tmp_character_array.toString();
+            DOMUtilities.writeNode(po.patterns.get(i).rear, tmp_character_array2);
+            pt.rear = tmp_character_array2.toString();
         }
 
         catch(Exception e){
@@ -1114,7 +1218,6 @@ System.out.println("5");
     catch(Exception e){
         System.out.println("projectWriter exception: "+e);
     }
-System.out.println("6");
     System.out.println("Before history repetition");
     CharArrayWriter history_string = new CharArrayWriter();
     for(int x = 0; x < po.history_elements.size(); x++){
