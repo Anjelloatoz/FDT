@@ -53,9 +53,13 @@ class NavigatorTreeCellRenderer extends DefaultTreeCellRenderer {
             catch(Exception e2){
                 try{
                     element = (Element)nodeObj;
-                    if(element.getNodeName().equals("svg")){
+                    if(element.getAttribute("id").equals("frontAnjelloatoz@gmail.com")){
                         setIcon(frontIcon);
                         setText("Front Face");
+                    }
+                    else if(element.getAttribute("id").equals("rearAnjelloatoz@gmail.com")){
+                        setIcon(rearIcon);
+                        setText("Rear Face");
                     }
                     else if(element.getNodeName().equals("path")){
                         setIcon(getElementIcon(element));
@@ -63,6 +67,11 @@ class NavigatorTreeCellRenderer extends DefaultTreeCellRenderer {
                     }
                 }
                 catch(Exception e3){
+//                    System.out.println("The filtered down node is: "+nodeObj.toString());
+                    if(nodeObj == null){
+                        System.out.println("This node is null, RETURNING");
+                        return null;
+                    }
                     if(nodeObj instanceof Element){
                         System.out.println("This is a ");
                         setIcon(frontIcon);

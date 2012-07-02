@@ -96,6 +96,7 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     JTabbedPane drawing_board_tabbs = new JTabbedPane();
     Container drawing_container;
     JPanel bordfooter;
+    SVGConjurer selectedSVGC;
 
     DockController controller = new DockController();
     DockController default_controller = new DockController();
@@ -454,11 +455,12 @@ splashText("Loading the paint board");
         pb = new paintBoard();
 increaseSplash();
 splashText("Initializing drawing canvases");
-        svgF = new SVGConjurer(dim, alt, dbf);
-        svgR = new SVGConjurer(dim, alt, dbf);
+        svgF = new SVGConjurer(dim, alt, dbf, "front");
+        svgR = new SVGConjurer(dim, alt, dbf, "rear");
         svgF.rt = this;
         svgR.rt = this;
         dbf.svgc = svgF;
+        selectedSVGC = svgF;
 
 increaseSplash();
 
@@ -535,6 +537,7 @@ increaseSplash();
         //        iframe.add(drawingScrollPane);
         drawing_board_tabbs.addTab("Front View", frontDrawingScrollPane);
         drawing_board_tabbs.addTab("Rear View", rearDrawingScrollPane);
+        drawing_board_tabbs.addChangeListener(this);
 increaseSplash();
 splashText("Loading the drawing board footer");
         iframe.add(bordfooter, BorderLayout.SOUTH);
@@ -595,6 +598,22 @@ increaseSplash();
     }
 
     public void stateChanged(ChangeEvent e) {
+        try{
+            JTabbedPane jtp = (JTabbedPane)e.getSource();
+            if(jtp.getSelectedIndex()==1){
+                tb.svgc = svgR;
+                ctrlp.svgc = svgR;
+                selectedSVGC = svgR;
+            }
+            else{
+                tb.svgc = svgF;
+                ctrlp.svgc = svgF;
+                selectedSVGC = svgF;
+            }
+        }
+        catch(Exception ex1){
+
+        }
         svgF.color = colorChooser.getColor();
         svgR.color = colorChooser.getColor();
       }
@@ -643,7 +662,9 @@ increaseSplash();
             navigator_container = navigator_dock.getContentPane();
             navigator_container.add(new JScrollPane(th.getTree()));
             svgF.project_object = project_obj;
+            svgR.project_object = project_obj;
             svgF.th = th;
+            svgR.th = th;
             amEntrySave.setEnabled(true);
             amEntryClose.setEnabled(true);
         }
@@ -688,8 +709,8 @@ increaseSplash();
                 int bt_num = Integer.parseInt(bt_txt[bt_txt.length-1]);
 
                 ImageRelations2 ir = new ImageRelations2(fabrics_list.get(bt_num).getFabricMainImage(), fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricNameLong());
-                svgF.fillUri = ir.getUri();
-                svgF.fillPatternByURI();
+                selectedSVGC.fillUri = ir.getUri();
+                selectedSVGC.fillPatternByURI();
             }
             else if(jtb.getName().contains("button")){
                 String[] bt_txt = jtb.getName().split(" ");

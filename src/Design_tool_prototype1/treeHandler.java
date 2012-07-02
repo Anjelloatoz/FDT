@@ -88,12 +88,12 @@ public class treeHandler implements ActionListener, MouseListener{
         IconNode[] rear_nodes = new IconNode[project.patterns.size()];
         for(int i = 0; i < pattern_nodes.length; i++){
             front_nodes[i] = new IconNode(project.patterns.get(i).front);
-//            rear_nodes[i] = new IconNode(project.patterns.get(i).rear);
+            rear_nodes[i] = new IconNode(project.patterns.get(i).rear);
 
             pattern_nodes[i].add(front_nodes[i]);
-//            pattern_nodes[i].add(rear_nodes[i]);
-
+            pattern_nodes[i].add(rear_nodes[i]);
             elementIterator2(front_nodes[i], project.patterns.get(i).front);
+            elementIterator2(rear_nodes[i], project.patterns.get(i).rear);
 
 //*            front_nodes[i].add(elementIterator(project.patterns.get(i).front));
 //            rear_nodes[i].add(elementIterator(project.patterns.get(i).rear));
@@ -106,7 +106,7 @@ public class treeHandler implements ActionListener, MouseListener{
             history_node.add(new IconNode(project.history_elements.get(i)));
         }
 
-        tree = new DnDJTree(this.svgc);
+        tree = new DnDJTree(rt);
         DefaultTreeModel mod = new DefaultTreeModel(project_node);
         tree.setModel(mod);
         tree.setCellRenderer(new NavigatorTreeCellRenderer());
@@ -125,6 +125,10 @@ public class treeHandler implements ActionListener, MouseListener{
     }
 
     private IconNode elementIterator2(IconNode root_node, Element e){
+        if(e == null){
+            System.out.println("****************    in the treeHandler elementIterator2 E is null");
+            return root_node;
+        }
         IconNode last_node = null;
         int owner_number = 1000;
         if(e.getLocalName().equals("svg")){
@@ -203,7 +207,9 @@ public class treeHandler implements ActionListener, MouseListener{
         else if(ae.getActionCommand().equals("drawing_duplicate")){
             Element duplicate = (Element)selected_element.cloneNode(true);
             duplicate.setAttribute("id", "copy_of_"+selected_element.getAttribute("id"));
-            selected_element.getParentNode().getParentNode().appendChild(svgc.createNewLayer(duplicate));
+            ElementLocalizer el = new ElementLocalizer((Element)selected_element.getParentNode().getParentNode(), duplicate, rt.svgF, rt.svgR);
+//            station_element.appendChild(el.container);
+            selected_element.getParentNode().getParentNode().appendChild(el.container);
             DefaultMutableTreeNode current_node = (DefaultMutableTreeNode)selPath.getLastPathComponent();
             ((DefaultTreeModel)tree.getModel()).insertNodeInto(new IconNode(duplicate), (IconNode)current_node.getParent(), current_node.getParent().getIndex(current_node)+1);
             tree.repaint();
@@ -234,6 +240,13 @@ public class treeHandler implements ActionListener, MouseListener{
                 Element clicked_element = (Element)clicked_node.getUserObject();
                 svgc.setSelectedDrawing(clicked_element);
                 svgc.refresh();
+                System.out.println("This node has: "+clicked_node.getUserObject());
+                if(clicked_element.getOwnerDocument().isSameNode(rt.svgF.document)){
+                    System.out.println("This element is from the front document.");
+                }
+                if(clicked_element.getOwnerDocument().isSameNode(rt.svgR.document)){
+                    System.out.println("This element is from the rear document.");
+                }
             }
             catch(Exception e2){
                 System.out.println("Not an element"+e2);
