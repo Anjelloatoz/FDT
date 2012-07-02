@@ -986,6 +986,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
 //            System.out.println("Current drawing parent is "+current_drawing.getParentNode().getLocalName()+" "+((Element)current_drawing.getParentNode()).getAttribute("id"));
             setSelectedDrawing(current_drawing);
+            
         }
 
         public void addNewLayer(Element element){
@@ -1013,6 +1014,29 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             uapo = new UndoableAddPatternObject(po, project_object, th, rt);
             compound_edit.addEdit(uapo);
             th.refreshTree(project_object, rt);
+        }
+
+        public Element reverseMaker(Node root){
+            NodeList nl = root.getChildNodes();
+            System.out.println("nl's length: "+nl.getLength());
+            for(int i = 0; i < nl.getLength(); i++){
+                try{
+                    System.out.println("nl.item(nl.getLength()-1): "+nl.item(nl.getLength()-1).getLocalName());
+                    System.out.println("nl.item(i): "+nl.item(i).getLocalName());
+                    if(nl.item(nl.getLength()-1).hasChildNodes()){
+                        reverseMaker(nl.item(nl.getLength()-1));
+                    }
+                    if(!nl.item(nl.getLength()-1).isSameNode(nl.item(i)))
+                    root.insertBefore(nl.item(nl.getLength()-1), nl.item(i));
+                }
+                catch(Exception ex){
+                    System.out.println("Could not insert the node: "+ex);
+                    root.appendChild(nl.item(nl.getLength()-1));
+                }                
+                System.out.println("roots first child: "+root.getFirstChild().getLocalName());
+            }
+            System.out.println("Before sending the root has children: "+root.getChildNodes().getLength());
+            return (Element)root;
         }
 
         public void symmetricFinishDrawing(){
@@ -1931,7 +1955,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             if(e.getLocalName().equals("path")){
                 registerPatternListeners(e);
             }
-
             if(e.getLocalName().equals("image")){
                 registerButtonListeners(e);
             }
@@ -3020,6 +3043,46 @@ String tmp = x+" "+y;
         catch(Exception e){
             System.err.println ("IO problem: " + e.toString () );
         }
+        try{
+            Element new_root = (Element)document.getDocumentElement().cloneNode(true);
+            NodeList nl = new_root.getElementsByTagName("line");
+            new_root.removeChild(nl.item(0));
+            new_root.removeChild(nl.item(0));
+            System.out.print("Check point 03");
+            SVGRect rear_rect = this.BoundryFinder(new_root, null);
+            System.out.print("Check point 04");
+            new_root.setAttribute("scale", "(-1,1)");
+            System.out.print("Check point 05");
+            float x = (rear_rect.getX()*2)+rear_rect.getWidth();
+            System.out.print("Check point 06");
+            x = -x;
+            System.out.print("Check point 07");
+            new_root.setAttribute("translate", "("+x+")");
+            System.out.print("Check point 08");
+            new_root.setAttribute("opacity", "0.5");
+            System.out.print("Check point 09");
+            Element reverse_element = reverseMaker(new_root);
+            System.out.print("Check point 10");
+            rearFilePrinter(reverse_element);
+            System.out.print("Check point 11");
+        }
+        catch(Exception exc){
+            System.out.println("Line 3052: "+exc);
+        }
+    }
+
+    public void rearFilePrinter(Element rear_root){
+        try{
+            FileWriter file = new FileWriter ("The RearDocument.svg");
+            PrintWriter writer = new PrintWriter (file);
+//            SVGDocument svgDoc = rear_root;
+            DOMUtilities.writeNode(rear_root, writer);
+            writer.close();
+            System.out.println("File written");
+        }
+        catch(Exception e){
+            System.err.println ("IO problem: " + e.toString () );
+        }
     }
 
     public void setTextElement(){
@@ -3070,11 +3133,11 @@ String tmp = x+" "+y;
             System.out.println("X of container is: "+path_container.getAttribute("x"));
             System.out.println("Y of container is: "+path_container.getAttribute("y"));
             text_defs.appendChild(path_container);
-            Element textPath = document.createElementNS(svgNS, "textPath");
-            textPath.setAttributeNS(XLINK_NAMESPACE_URI, "xlink:href", "#"+path_element.getAttribute("id"));
+            Element localtextPath = document.createElementNS(svgNS, "textPath");
+            localtextPath.setAttributeNS(XLINK_NAMESPACE_URI, "xlink:href", "#"+path_element.getAttribute("id"));
             Text text_element = document.createTextNode("Sample Text");
-            textPath.appendChild(text_element);
-            selected_text.appendChild(textPath);
+            localtextPath.appendChild(text_element);
+            selected_text.appendChild(localtextPath);
         }
         else{
             document.getElementById(selected_text.getAttribute("id")+"_textPath").setAttribute("d", element.getAttribute("d"));
@@ -3082,29 +3145,39 @@ String tmp = x+" "+y;
     }
 
     public SVGRect BoundryFinder(Element element, SVGRect rect){
+        System.out.println("BoundryFinder 01");
+        System.out.println("The sent element is: "+element.getLocalName()+" - "+element.getAttribute("id"));
         if(rect == null){
-            SVGLocatableSupport ls = new SVGLocatableSupport();
-            rect = ls.getBBox(element);
+            System.out.println("BoundryFinder 02");
+            rect = SVGLocatableSupport.getBBox(element);
+            System.out.println("BoundryFinder 03");
         }
         if(element.getLocalName().equals("svg")){
             for(int i = 0; i < element.getChildNodes().getLength(); i++){
                 rect = BoundryFinder((Element)element.getChildNodes().item(i), rect);
             }
         }
+        else if(element.getLocalName().equals("g")){
+            for(int i = 0; i < element.getChildNodes().getLength(); i++){
+                rect = BoundryFinder((Element)element.getChildNodes().item(i), rect);
+            }
+        }
         else{
-            SVGLocatableSupport ls = new SVGLocatableSupport();
-            SVGRect local_rect = ls.getBBox(element);
-
+            System.out.println("BoundryFinder 04");
+            SVGRect local_rect = SVGLocatableSupport.getBBox(element);
+            System.out.println("BoundryFinder 05");
             float local_x1 = local_rect.getX();
+            System.out.println("BoundryFinder 06");
             float local_y1 = local_rect.getY();
+            System.out.println("BoundryFinder 07");
             float local_x2 = local_rect.getX()+local_rect.getWidth();
             float local_y2 = local_rect.getY()+local_rect.getHeight();
-
+System.out.println("BoundryFinder 08");
             float rect_x1 = rect.getX();
             float rect_y1 = rect.getY();
             float rect_x2 = rect.getX()+rect.getWidth();
             float rect_y2 = rect.getY()+rect.getHeight();
-
+System.out.println("BoundryFinder 09");
             if(local_x1 < rect_x1){
                 rect.setX(local_x1);
             }
@@ -3117,18 +3190,19 @@ String tmp = x+" "+y;
             if(local_y2 > rect_y2){
                 rect.setHeight(local_y2-rect_y1);
             }
+System.out.println("BoundryFinder 10");
         }
+        System.out.println("BoundryFinder 11");
         return rect;
     }
 
     public SVGRect BoundryFinder4Resize(Element element, SVGRect rect){
         if(rect == null){
-            SVGLocatableSupport ls = new SVGLocatableSupport();
-            rect = ls.getBBox(element);
+            rect = SVGLocatableSupport.getBBox(element);
         }
         if(element.getLocalName().equals("svg")||element.getLocalName().equals("g")){
             for(int i = 0; i < element.getChildNodes().getLength(); i++){
-                rect = BoundryFinder((Element)element.getChildNodes().item(i), rect);
+                rect = BoundryFinder4Resize((Element)element.getChildNodes().item(i), rect);
             }
         }
         else{
