@@ -7,10 +7,12 @@ import java.awt.*;
 import java.awt.event.*;
 
 import java.util.*;
+import javax.swing.undo.*;
 
 public class DrawingBoardFooter extends JFrame implements ActionListener {
         JPanel drawingBoardFooterPanel;
         SVGConjurer svgc;
+        UndoManager manager;
         JLabel pointer_x = new JLabel("Length");
         JLabel pointer_y = new JLabel("Height");
         JLabel pointer_x_value = new JLabel("00");
@@ -19,6 +21,7 @@ public class DrawingBoardFooter extends JFrame implements ActionListener {
 
     public DrawingBoardFooter(SVGConjurer svgc){
         this.svgc = svgc;
+        
         drawingBoardFooterPanel = new JPanel();
         drawingBoardFooterPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
         BevelBorder lowered_border = new BevelBorder(BevelBorder.LOWERED);
@@ -40,6 +43,30 @@ public class DrawingBoardFooter extends JFrame implements ActionListener {
         undo.setEnabled(false);
         redo.setEnabled(false);
 
+        undo.addActionListener(new ActionListener(){
+            public void actionPerformed(ActionEvent ae){
+                try{
+                    manager.undo();
+                } catch(javax.swing.undo.CannotUndoException ex){ex.printStackTrace();}
+
+                finally{
+                    updateButtons();
+                }
+            }
+        });
+
+        redo.addActionListener(new ActionListener(){
+            public void actionPerformed(ActionEvent ae){
+                try{
+                    manager.redo();
+                } catch(javax.swing.undo.CannotRedoException ex){ex.printStackTrace();}
+
+                finally{
+                    updateButtons();
+                }
+            }
+        });
+
         drawingBoardFooterPanel.add(pointer_x, FlowLayout.LEFT);
         drawingBoardFooterPanel.add(pointer_x_value, FlowLayout.LEFT);
         drawingBoardFooterPanel.add(pointer_y, FlowLayout.LEFT);
@@ -47,6 +74,11 @@ public class DrawingBoardFooter extends JFrame implements ActionListener {
 
         drawingBoardFooterPanel.add(undo);
         drawingBoardFooterPanel.add(redo);
+    }
+
+    void updateButtons(){
+        undo.setEnabled(manager.canUndo());
+        redo.setEnabled(manager.canRedo());
     }
 
     public JPanel getDrawingBoardFooter(){

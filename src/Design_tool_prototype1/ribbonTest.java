@@ -70,6 +70,7 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     SVGConjurer svgc;
     alterStation alt;
     ControlPanel ctrlp;
+    DrawingBoardFooter dbf;
     navigator nv = new navigator();
     JColorChooser colorChooser;
     JRibbonGallery gallery;
@@ -298,13 +299,14 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
         this.getRibbon().addTask(new RibbonTask("Dress Form", dress_form_button_band));
         this.getRibbon().addTask(new RibbonTask("Buttons", buttons_button_band, button_gallery_band));
 
-        DrawingBoardFooter dbf = new DrawingBoardFooter(svgc);
+        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+        dbf = new DrawingBoardFooter(svgc);
         JPanel bordfooter = dbf.getDrawingBoardFooter();
         desk = new JDesktopPane();
         iframe = new JInternalFrame("Drawing Board", true, true, true, true);
         iframe.setIconifiable(false);
         iframe.setToolTipText("Your drawings go here");
-        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+        
         iframe.setBounds(0, 0, dim.width-400, dim.height-200);
         iframe.setVisible(true);
                                 
@@ -315,6 +317,7 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
         toolframe.setVisible(true);
 
         pb = new paintBoard();
+
         svgc = new SVGConjurer(dim, alt, dbf);
         svgc.rt = this;
         alt.svgc = svgc;
