@@ -28,7 +28,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.*;
 import java.awt.image.*;
 import javax.swing.*;
-
+import java.util.List;
 
 import java.awt.*;
 
@@ -242,6 +242,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             DOMImplementation dom = SVGDOMImplementation.getDOMImplementation();
             document = dom.createDocument(svgNS, "svg", null);
             canvas.setDocument(document);
+
             this_side = document.createElementNS(svgNS, "svg");
             this_side.setAttribute("id", "this_side");
             other_side = document.createElementNS(svgNS, "svg");
@@ -250,9 +251,12 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             setPlates();
             drawAxises();
             document.getDocumentElement().appendChild(this_side);
+
         }
 
 	public void mouseClicked(MouseEvent e) {
+                    System.out.println("UpdateManager status: "+canvas.getUpdateManager().isRunning());
+
             removeResizeHandler();
             if(!splitChecker()){
                 return;
@@ -508,6 +512,20 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
         private void drawAxises(){
             Element root = document.getDocumentElement();
+            Element centreX = document.createElementNS(svgNS, "line");
+            centreX.setAttributeNS(null, "stroke", "grey");
+            centreX.setAttributeNS(null, "stroke-width", "1");
+            centreX.setAttributeNS(null, "x1", "0");
+            centreX.setAttributeNS(null, "x2", ""+canvas.getWidth());
+            centreX.setAttributeNS(null, "y1", ""+canvas.getHeight()/2);
+            centreX.setAttributeNS(null, "y2", ""+canvas.getHeight()/2);
+            Element centreY = document.createElementNS(svgNS, "line");
+            centreY.setAttributeNS(null, "x1", ""+canvas.getWidth()/2);
+            centreY.setAttributeNS(null, "x2", ""+canvas.getWidth()/2);
+            centreY.setAttributeNS(null, "y1", "0");
+            centreY.setAttributeNS(null, "y2", ""+canvas.getHeight());
+            centreY.setAttributeNS(null, "stroke", "grey");
+            centreY.setAttributeNS(null, "stroke-width", "1");
             axis_X = document.createElementNS(svgNS, "line");
             axis_X.setAttributeNS(null, "id", "axis_X");
             axis_X.setAttributeNS(null, "stroke", "lime");
@@ -518,8 +536,13 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             axis_Y.setAttributeNS(null, "stroke-width", "1");
             root.appendChild(axis_X);
             root.appendChild(axis_Y);
+
+            root.appendChild(centreX);
+            root.appendChild(centreY);
+            
         }
         public void setPlates(){
+
             try{
                 document.getDocumentElement().removeChild(other_side);
             }
@@ -538,6 +561,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             this_side.setAttribute("id", "this_side");
             document.getDocumentElement().insertBefore(other_side, axis_X);
             document.getDocumentElement().appendChild(this_side);
+
         }
 
         private void drawPrediction(){
@@ -2095,6 +2119,13 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             if(selected_shape !=null){
                 selected_shape.setAttribute("stroke", "black");
             }
+/*            NodeList all_nodes = document.getElementsByTagName("path");
+            for(int i = 0; i < all_nodes.getLength(); i++){
+                if(!((Element)all_nodes.item(i)).getAttribute("id").equals(e.getAttribute("id"))){
+                    removeListeners(((Element)all_nodes.item(i)));
+                    ((Element)all_nodes.item(i)).setAttribute("stroke", "grey");
+                }
+            }*/
             selected_shape = e;
             e.setAttribute("stroke", "red");
             try{
@@ -2190,27 +2221,67 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 ////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
         public void removeListeners(Element element){
-        EventTarget t1 = (EventTarget)element;
-
-
-        t1.removeEventListener("mouseover", new OnMouseMuteAction(), false);
-        t1.removeEventListener("mouseout", new OnMouseMuteAction(), false);
-        t1.removeEventListener("click", new OnMouseMuteAction(), false);
-        t1.removeEventListener("mousedown", new OnMouseMuteAction(), false);
-        t1.removeEventListener("mouseup", new OnMouseMuteAction(), false);
-    }
-
-        public class OnMouseMuteAction implements EventListener {
-        public void handleEvent (Event evt) {
-            System.out.println("OnMouseMuteAction");
+            System.out.println("came into the removeListeners");
+            EventTarget t1 = (EventTarget)element;
+            t1.addEventListener("SVGUnload", new unloadListener(element), false);
+            t1.addEventListener("mouseout", new unloadListener(element), false);
+            t1.addEventListener("click", new unloadListener(element), false);
+            t1.addEventListener("mousedown", new unloadListener(element), false);
+            t1.addEventListener("mouseup", new unloadListener(element), false);
         }
-      }
+
+        public class MouseMuteAction implements EventListener {
+            public void handleEvent (Event evt){
+                System.out.println("OnMouseMuteAction");
+            }
+        }
+
+        private static class unloadListener implements EventListener{
+            private class Entry{
+                String type;
+                EventListener caller;
+                EventTarget target;
+                Entry(String type, EventListener listener, EventTarget target){
+                    this.type = type;
+                    this.caller = listener;
+                    this.target = target;
+                }
+            }
+
+            private Element SVGRoot = null;
+            private List list = new LinkedList();
+            private static HashMap map = new HashMap(1);
+            unloadListener(Element SVGRoot){
+                this.SVGRoot = SVGRoot;
+                map.put(SVGRoot, this);
+            }
+
+            public static unloadListener getInstance(Element SVGRoot){
+                return (unloadListener)map.get(SVGRoot);
+            }
+
+            public void addListener(EventTarget element, String type, EventListener listener){
+                list.add(new Entry(type, listener, element));
+            }
+
+            public void handleEvent(Event evt){
+                Iterator it = list.iterator();
+                while(it.hasNext()){
+                    Entry entry = (Entry)it.next();
+                    entry.target.removeEventListener(entry.type, entry.caller, false);
+                }
+                map.remove(SVGRoot);
+                SVGRoot = null;
+                list = null;
+                evt.getTarget().removeEventListener("SVGUnload", this, false);
+            }
+        }
     public void registerEditPointListeners(Element element){
         EventTarget t1 = (EventTarget)element;
 
         t1.addEventListener ("mouseover", new OnMouseOverEditPointAction(), false);
         t1.addEventListener ("mouseout", new OnMouseOutEditPoint(), false);
-        t1.addEventListener ("click", new OnEditPointClickAction(), false);
+        t1.addEventListener ("cslick", new OnEditPointClickAction(), false);
         t1.addEventListener ("mousedown", new OnEditPointMouseDownAction(), false);
         t1.addEventListener ("mouseup", new OnEditPointMouseUpAction(), false);
     }
@@ -3012,6 +3083,7 @@ String tmp = x+" "+y;
         try{
             Element new_root = (Element)document.getElementById("this_side").cloneNode(true);
             Rectangle rear_rect = this.BoundryFinder(this_side, null);
+            int canvas_width = canvas.getWidth();
             float x = (float)((rear_rect.getX()*2)+rear_rect.getWidth());
             Element group = document.createElementNS(svgNS, "g");
             group.setAttribute("id", "group");
@@ -3021,7 +3093,7 @@ String tmp = x+" "+y;
 
             group.appendChild(new_root);
 
-            group.setAttribute("transform", "translate("+x+") scale(-1,1)");
+            group.setAttribute("transform", "translate("+canvas_width+") scale(-1,1)");
             new_root.setAttribute("opacity", "0.5");
             reverse_element = reverseMaker(group);
             rearFilePrinter(reverse_element);            
@@ -3324,6 +3396,7 @@ String tmp = x+" "+y;
     }
 
     public void refresh(){
+
         org.w3c.dom.NodeList nl = document.getElementsByTagName("path");
         for(int i = 0; i < nl.getLength(); i++){
             registerPatternListeners((Element)nl.item(i));
