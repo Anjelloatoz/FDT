@@ -1423,6 +1423,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 public void run(){
                     Element root = document.getDocumentElement();
                     root.removeChild(selected_shape);
+                    System.out.println("This drawing had fillings: "+selected_shape.getAttribute("fill"));
                 }
             };
             UpdateManager um = canvas.getUpdateManager();
@@ -1434,6 +1435,22 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 //////////////////// REGISTERING THE LISTENERS \\\\\\\\\\\\\\\\\\\\\\\\\\\\
 ////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
+        public void removeListeners(Element element){
+        EventTarget t1 = (EventTarget)element;
+
+
+        t1.removeEventListener("mouseover", new OnMouseMuteAction(), false);
+        t1.removeEventListener("mouseout", new OnMouseMuteAction(), false);
+        t1.removeEventListener("click", new OnMouseMuteAction(), false);
+        t1.removeEventListener("mousedown", new OnMouseMuteAction(), false);
+        t1.removeEventListener("mouseup", new OnMouseMuteAction(), false);
+    }
+
+        public class OnMouseMuteAction implements EventListener {
+        public void handleEvent (Event evt) {
+            System.out.println("OnMouseMuteAction");
+        }
+      }
     public void registerEditPointListeners(Element element){
         EventTarget t1 = (EventTarget)element;
 
