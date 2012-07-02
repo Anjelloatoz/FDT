@@ -670,17 +670,8 @@ increaseSplash();
             }
         }
         catch(Exception ex1){
-
+            System.out.println("In the Ribbon Test: "+ex1);
         }
-        try{
-            JSlider slider = (JSlider)e.getSource();
-            selectedSVGC.setTextSize(slider.getValue());
-        }
-        catch(Exception ex){
-            System.out.println("Text slider exception");
-        }
-//        svgF.color = colorChooser.getColor();
-//        svgR.color = colorChooser.getColor();
         selectedSVGC.testTextColor(colorChooser.getColor());
       }
     public void actionPerformed(ActionEvent ae){
@@ -701,7 +692,7 @@ increaseSplash();
             }
         }
         catch(Exception ee){
-            System.out.print("ribbon test ActionPerformed");
+            System.out.print("ribbon test ActionPerformed Exception");
         }
 
         try{
@@ -1475,6 +1466,7 @@ public void imageWriterTester(int[] p){
     }
 
 public static void main(String args[])throws Exception{
+//    System.out.println("Sent parameter: "+args[0]);
 
     JRibbonFrame.setDefaultLookAndFeelDecorated(true);
 /*        SwingUtilities.invokeLater(new Runnable() {

@@ -272,7 +272,7 @@ public class App extends JRibbonFrame implements ChangeListener, ActionListener{
         alt.svgc = svgc;
         pb.alt = alt;
         pb.nv = nv;
-        toolbox tb = new toolbox(svgc);
+        toolbox tb = null;// = new toolbox(svgc);
         toolframe.add(tb.getToolbox());
         desk.add(toolframe);
 

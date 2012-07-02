@@ -76,7 +76,6 @@ public class resizeHandler{
 //        System.out.println("tmp_rect width: "+tmp_rect.getWidth());
 //        System.out.println("test_rect width: "+test_rect.getWidth());
 //        tmp_rect = test_rect;
-        System.out.println("In the resizeHandler the sent element is: "+((Element)(subject.getParentNode().getParentNode())).getLocalName());
 
         this.canvas = canvas;
         bounding_box = new Rectangle();
@@ -136,8 +135,7 @@ public class resizeHandler{
         resizer_holder.appendChild(middle_bottom_box);
 
         resizer_holder.setAttribute("transform", "rotate("+rotation_angl+")");
-//        owner_document.getDocumentElement().appendChild(resizer_holder);
-        svgc.appendElement(svgc.resize_frame, resizer_holder);
+        owner_document.getDocumentElement().appendChild(resizer_holder);
     }
 
     private Element createDragBox(String name, Document owner_document, String svgNS, int x, int y){

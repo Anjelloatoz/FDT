@@ -70,6 +70,11 @@ public class treeHandler implements ActionListener, MouseListener{
         pattern_save_item.addActionListener(this);
         pattern_object_popup.add(pattern_save_item);
 
+        JMenuItem pattern_rear_item = new JMenuItem("Create rear view", new ImageIcon("rename.gif"));
+        pattern_rear_item.setActionCommand("pattern_rear");
+        pattern_rear_item.addActionListener(this);
+        pattern_object_popup.add(pattern_rear_item);
+
         updateTree(project);
     }
 
@@ -166,6 +171,10 @@ public class treeHandler implements ActionListener, MouseListener{
             root_node.add(last_node);
             return root_node;
         }
+        else if(e.getLocalName().equals("g")){
+            elementIterator2(root_node, (Element)e.getFirstChild());
+            return root_node;
+        }
         else return root_node;
     }
 
@@ -220,12 +229,16 @@ public class treeHandler implements ActionListener, MouseListener{
             pp.setRearView(ir.image);
             rt.addPattern(pp);
         }
+
+        else if(ae.getActionCommand().equals("pattern_rear")){
+            System.out.println(pattern_object.pattern_name+":");
+        }
         else if(ae.getActionCommand().equals("drawing_duplicate")){
             Element duplicate = (Element)selected_element.cloneNode(true);
             duplicate.setAttribute("id", "copy_of_"+selected_element.getAttribute("id"));
             ElementLocalizer el = new ElementLocalizer((Element)selected_element.getParentNode().getParentNode(), duplicate, rt.svgF, rt.svgR);
 //            station_element.appendChild(el.container);
-            selected_element.getParentNode().getParentNode().appendChild(el.container);
+            selected_element.getParentNode().getParentNode().getParentNode().appendChild(el.container);
             DefaultMutableTreeNode current_node = (DefaultMutableTreeNode)selPath.getLastPathComponent();
             ((DefaultTreeModel)tree.getModel()).insertNodeInto(new IconNode(duplicate), (IconNode)current_node.getParent(), current_node.getParent().getIndex(current_node)+1);
             tree.repaint();
@@ -252,25 +265,39 @@ public class treeHandler implements ActionListener, MouseListener{
         if(selPath!=null){
             tree.setSelectionPath(selPath);
             DefaultMutableTreeNode clicked_node = (DefaultMutableTreeNode)tree.getSelectionPath().getLastPathComponent();
+            System.out.println("The clicked node is: "+clicked_node.getUserObject());
             try{
                 Element clicked_element = (Element)clicked_node.getUserObject();
+                System.out.println("Check point 01");
                 rt.selectedSVGC.setSelectedDrawing(clicked_element);
+                System.out.println("Check point 02");
                 rt.selectedSVGC.refresh();
+                System.out.println("Check point 03");
                 if(clicked_element.getOwnerDocument().isSameNode(rt.svgF.document)){
 //                    System.out.println("This element is from the front document.");
                 }
                 if(clicked_element.getOwnerDocument().isSameNode(rt.svgR.document)){
 //                    System.out.println("This element is from the rear document.");
                 }
+                System.out.println("Check point 04");
                 if(clicked_element.getLocalName().equals("text")){
+                    System.out.println("Check point 05");
                     rt.text_type_area.setText(clicked_element.getFirstChild().getFirstChild().getTextContent());
+                    System.out.println("Check point 06");
                     rt.getRibbon().setSelectedTask(rt.getRibbon().getTask(4));
+                    System.out.println("Check point 07");
                     rt.selectedSVGC.selected_text = clicked_element;
+                    System.out.println("Check point 08");
                     rt.selectedSVGC.selected_shape = null;
+                    System.out.println("Check point 09");
                 }
+
                 else if(clicked_element.getLocalName().equals("path")){
+                    System.out.println("Check point 10");
                     rt.getRibbon().setSelectedTask(rt.getRibbon().getTask(0));
+                    System.out.println("Check point 11");
                     rt.selectedSVGC.textPath = false;
+                    System.out.println("Check point 12");
                 }
             }
             catch(Exception e2){
@@ -326,12 +353,13 @@ public class treeHandler implements ActionListener, MouseListener{
             }
         }
     }
+    public void mouseExited(MouseEvent e) {
+        }
 
     public void mouseEntered(MouseEvent e){
 
     }
-    public void mouseExited(MouseEvent e) {
-        }
+    
     private String renameDialog(String element, String current_name){
         JTextField new_name_field = new JTextField();
 
