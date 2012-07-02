@@ -121,6 +121,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         UndoableSwitchDrawingInProgress usdip;
         CompoundEdit compound_edit;
         UndoableReplaceList url;
+        UndoableArcReplaceList uarl;
 
         public SVGConjurer(){
 
@@ -223,8 +224,8 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                     p2("");
                 }
 
-                removeElement(document.getElementById("prediction"));
-                drawPrediction();
+//                removeElement(document.getElementById("prediction"));
+//                drawPrediction();
             }
 	}
 
@@ -311,7 +312,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             axisAdjust();
 
             if(last_location != null){
-                adjustPrediction();
+//                adjustPrediction();
             }
         }
 
@@ -506,7 +507,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         private void drawLine(){
-            Element root = document.getDocumentElement();
             Element current_drawing;
             if(drawing_in_progress){
                 current_drawing = document.getElementById("drawing_"+drawing_number);
@@ -530,28 +530,12 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             usa = new UndoableSetAttribute(this, current_drawing, "d", current_drawing.getAttributeNS(null, "d")+" L "+current_drawing_locations.get(1).getX()+" "+current_drawing_locations.get(1).getY());
             compound_edit.addEdit(usa);
             
-
-            p3("13. current_drawing_locations: "+current_drawing_locations.size());
-//*            current_drawing_locations.clear();
-
-/*            p3("14. current_drawing_locations: "+current_drawing_locations.size());
-            ucdl = new UndoableClearDrawingLocations(this);
-            compound_edit.addEdit(ucdl);
-            
-            
-//            p3("15. current_drawing_locations: "+current_drawing_locations.size());
-//            current_drawing_locations.add(last_location);
-
-/*            p3("16. current_drawing_locations: "+current_drawing_locations.size());
-            uadl = new UndoableAddDrawingLocation(this, last_location);
-            compound_edit.addEdit(uadl);
-  */
             p3("17. current_drawing_locations: "+current_drawing_locations.size());
 //*            drawing_in_progress = true;
             url = new UndoableReplaceList(this);
             compound_edit.addEdit(url);
 
-            usdip = new UndoableSwitchDrawingInProgress(this, drawing_in_progress);
+            usdip = new UndoableSwitchDrawingInProgress(this, true);
             compound_edit.addEdit(usdip);
             compound_edit.end();
             manager.addEdit(compound_edit);
@@ -561,32 +545,38 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         private void drawArc(){
-            Runnable r = new Runnable() {
-			public void run() {
-				Element root = document.getDocumentElement();
-                                Element current_drawing;
-                                if(drawing_in_progress){
-                                    current_drawing = document.getElementById("drawing_"+drawing_number);
-                                }
-                                else{
-                                    current_drawing = document.createElementNS(svgNS, "path");
-                                    current_drawing.setAttributeNS (null, "id", "drawing_"+drawing_number);
-                                    current_drawing.setAttributeNS(null, "pathLength", "100");
-                                    current_drawing.setAttributeNS (null, "stroke", "black");
-                                    current_drawing.setAttributeNS (null, "stroke-width", "1");
-                                    current_drawing.setAttributeNS(null, "fill", "none");
-                                    root.appendChild(current_drawing);
-                                    current_drawing.setAttributeNS(null, "d", "M "+current_drawing_locations.get(0).getX()+" "+current_drawing_locations.get(0).getY());
-                                }
-                                current_drawing.setAttributeNS(null, "d", current_drawing.getAttributeNS(null, "d")+" C"+current_drawing_locations.get(1).getX()+" "+current_drawing_locations.get(1).getY()+" "+current_drawing_locations.get(2).getX()+" "+current_drawing_locations.get(2).getY()+" "+current_drawing_locations.get(3).getX()+" "+current_drawing_locations.get(3).getY());
-                                current_drawing_locations.clear();
-                                current_drawing_locations.add(last_location);
-                                drawing_in_progress = true;
-			}
-		};
-
-		UpdateManager um = canvas.getUpdateManager();
-		um.getUpdateRunnableQueue().invokeLater(r);
+            Element root = document.getDocumentElement();
+            Element current_drawing;
+            if(drawing_in_progress){
+                current_drawing = document.getElementById("drawing_"+drawing_number);
+            }
+            else{
+                current_drawing = document.createElementNS(svgNS, "path");
+                current_drawing.setAttributeNS (null, "id", "drawing_"+drawing_number);
+                current_drawing.setAttributeNS(null, "pathLength", "100");
+                current_drawing.setAttributeNS (null, "stroke", "black");
+                current_drawing.setAttributeNS (null, "stroke-width", "1");
+                current_drawing.setAttributeNS(null, "fill", "none");
+                current_drawing.setAttributeNS(null, "d", "M "+current_drawing_locations.get(0).getX()+" "+current_drawing_locations.get(0).getY());
+                uae = new UndoableAddElement(this, current_drawing);
+                compound_edit.addEdit(uae);
+//*                root.appendChild(current_drawing);
+            }
+            usa = new UndoableSetAttribute(this, current_drawing, "d", current_drawing.getAttributeNS(null, "d")+" C"+current_drawing_locations.get(1).getX()+" "+current_drawing_locations.get(1).getY()+" "+current_drawing_locations.get(2).getX()+" "+current_drawing_locations.get(2).getY()+" "+current_drawing_locations.get(3).getX()+" "+current_drawing_locations.get(3).getY());
+            compound_edit.addEdit(usa);
+//*            current_drawing.setAttributeNS(null, "d", current_drawing.getAttributeNS(null, "d")+" C"+current_drawing_locations.get(1).getX()+" "+current_drawing_locations.get(1).getY()+" "+current_drawing_locations.get(2).getX()+" "+current_drawing_locations.get(2).getY()+" "+current_drawing_locations.get(3).getX()+" "+current_drawing_locations.get(3).getY());
+//*            current_drawing_locations.clear();
+//*            current_drawing_locations.add(last_location);
+            uarl = new UndoableArcReplaceList(this);
+            compound_edit.addEdit(uarl);
+//*            drawing_in_progress = true;
+            usdip = new UndoableSwitchDrawingInProgress(this, true);
+            compound_edit.addEdit(usdip);
+            compound_edit.end();
+            manager.addEdit(compound_edit);
+            dbf.manager = manager;
+            dbf.updateButtons();
+            System.out.println("End of the arc: "+current_drawing_locations.size());
         }
 
         public void removePrediction(){
@@ -603,8 +593,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             }
             catch(Exception ex){
                 System.out.println("The prediction could not be found.");
-            }
-            
+            }            
         }
 
         public void finishDrawing(final Element current_drawing){
@@ -620,20 +609,10 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                       return;
                   }
 
-/*                  SVGLocatableSupport ls = new SVGLocatableSupport();
-                  SVGRect rect = ls.getBBox(current_drawing);
-                  float x = rect.getX();
-                  float y = rect.getY();
-                  float width = rect.getWidth();
-                  float height = rect.getHeight();
-                  root.removeChild(current_drawing);
-  */
-
                   Element svg_element = document.createElementNS(svgNS, "svg");
                   svg_element.setAttribute("id", "svg_"+current_drawing.getAttribute("id"));
                   svg_element.setAttribute("x", ""+0);
                   svg_element.setAttribute("y", ""+0);
-//                  svg_element.setAttribute("viewBox", "0 0 100 100");
 
                   svg_element.appendChild(current_drawing);
                   root.appendChild(svg_element);
@@ -641,10 +620,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                   org.w3c.dom.NodeList nl = document.getElementsByTagName("svg");
                   Element el = (Element)nl.item(1);
 
-//                  current_drawing.setAttribute("fill", "rgb("+color.getRed()+","+color.getGreen()+","+color.getBlue()+")");
-                  //current_drawing.setAttribute("fill", "url(#pattern"+drawing_number+")");
-
-//            canvas.setRenderingTransform(at);
                   registerPatternListeners(current_drawing);
                   p1(current_drawing.getAttribute("d"));
                   drawing_number++;
@@ -667,7 +642,8 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             current_drawing_locations.clear();
             whole_path_locations_list.clear();
             last_location = null;
-            
+            manager.discardAllEdits();
+            dbf.updateButtons();
         }
 
         public Element setGuideImage(final String image_path, final int width, final int height){
@@ -744,7 +720,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         public void patternSplitter(){
-            removePrediction();
+//            removePrediction();
             Element spath = document.getElementById("drawing_"+drawing_number);
             for(int i = 0; i< 8; i++){
                 p1("");
@@ -1417,7 +1393,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
       }
 
         public void registerPatternListeners(Element element){
-
         EventTarget t1 = (EventTarget) document.getElementById (element.getAttribute("id"));
 //        p1("Registering element is "+element.getAttribute("id"));
 
