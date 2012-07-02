@@ -30,7 +30,6 @@ public class UndoablePointDrag extends AbstractUndoableEdit{
         this.prev_pattern_coords = prev_pat;
         this.new_pattern_coords = pattern.getAttribute("d");
         this.canvas = svgc.canvas;
-        System.out.println("Came into the UndoablePointDrag");
 
         Runnable r = new Runnable(){
           public void run(){
@@ -47,7 +46,6 @@ public class UndoablePointDrag extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
-        System.out.println("Came into the redo");
 
         Runnable r = new Runnable(){
           public void run(){
@@ -60,7 +58,6 @@ public class UndoablePointDrag extends AbstractUndoableEdit{
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("Came into the undo");
 
         Runnable r = new Runnable(){
           public void run(){

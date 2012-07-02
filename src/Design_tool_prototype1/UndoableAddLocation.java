@@ -27,12 +27,13 @@ public class UndoableAddLocation extends AbstractUndoableEdit{
         this.canvas = svgc.canvas;
         svgc.registerEditPointListeners(Location);
 //        System.out.println("Came into the UndoableAddLocation");
-
+Location_list.add(Location);
         Runnable r = new Runnable(){
             public void run(){
                 Element root = doc.getDocumentElement();
                 root.appendChild(Location);
-                Location_list.add(Location);
+                
+//                System.out.println("In the undoable add location Location_list:"+Location_list.size());
             }
         };
         UpdateManager um = canvas.getUpdateManager();
@@ -45,11 +46,12 @@ public class UndoableAddLocation extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
+        Location_list.add(Location);
         Runnable r = new Runnable(){
             public void run(){
                 Element root = doc.getDocumentElement();
                 root.appendChild(Location);
-                Location_list.add(Location);
+                
             }
         };
         UpdateManager um = canvas.getUpdateManager();
@@ -59,11 +61,12 @@ public class UndoableAddLocation extends AbstractUndoableEdit{
     public void undo() throws CannotUndoException{
         super.undo();
 //        System.out.println("    UNDO-UndoableAddLocation");
+        Location_list.remove(Location);
         Runnable r = new Runnable(){
             public void run(){
                 Element root = doc.getDocumentElement();
                 root.removeChild(Location);
-                Location_list.remove(Location);
+                
             }
         };
         UpdateManager um = canvas.getUpdateManager();

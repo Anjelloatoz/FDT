@@ -23,7 +23,7 @@ public class UndoableAddPointParameterSetter extends AbstractUndoableEdit{
         svgc.last_location = svgc.mouse_point;
         svgc.current_drawing_locations.add(svgc.last_location);
         svgc.whole_path_locations_list.add(svgc.last_location);
-        System.out.println("Came into the UndoableAddPointParameterSetter");
+//        System.out.println("Came into the UndoableAddPointParameterSetter");
     }
 
     public String getPresentationName(){
@@ -32,24 +32,24 @@ public class UndoableAddPointParameterSetter extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
-        System.out.println("Came into the UndoableAddPointParameterSetter redo");
+//        System.out.println("Came into the UndoableAddPointParameterSetter redo");
         svgc.last_location = prev_last_location;
         svgc.mouse_point = prev_mouse_point;
-        System.out.println("before: current_drawing_locations.size() is "+(svgc.current_drawing_locations.size()));
+//        System.out.println("before: current_drawing_locations.size() is "+(svgc.current_drawing_locations.size()));
         svgc.current_drawing_locations.add(svgc.last_location);
-        System.out.println("After: current_drawing_locations.size() is "+(svgc.current_drawing_locations.size()));
+//        System.out.println("After: current_drawing_locations.size() is "+(svgc.current_drawing_locations.size()));
         svgc.whole_path_locations_list.add(svgc.last_location);
     }
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("Came into the UndoableAddPointParameterSetter undo");
+//        System.out.println("Came into the UndoableAddPointParameterSetter undo");
         svgc.last_location = prev_last_location;
-        System.out.println("before: current_drawing_locations.size() is "+(svgc.current_drawing_locations.size()));
+//        System.out.println("before: current_drawing_locations.size() is "+(svgc.current_drawing_locations.size()));
 //        System.out.println("(svgc.whole_path_locations_list.size()-1) is "+(svgc.whole_path_locations_list.size()-1));
         svgc.current_drawing_locations.remove(svgc.current_drawing_locations.size()-1);
         svgc.whole_path_locations_list.remove(svgc.whole_path_locations_list.size()-1);
-        System.out.println("After: current_drawing_locations.size() is "+(svgc.current_drawing_locations.size()));
+//        System.out.println("After: current_drawing_locations.size() is "+(svgc.current_drawing_locations.size()));
     }
 
     public boolean addEdit(UndoableEdit anEdit){

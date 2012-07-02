@@ -33,7 +33,7 @@ public class UndoableAddLine extends AbstractUndoableEdit{
         this.prev_drawing_in_progress = svgc.drawing_in_progress;
         this.document = svgc.document;
         this.canvas = svgc.canvas;
-        System.out.println("Came into the UndoableAddLine");
+//        System.out.println("Came into the UndoableAddLine");
 
         Runnable r = new Runnable(){
             public void run(){

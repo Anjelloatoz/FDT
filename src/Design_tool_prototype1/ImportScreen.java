@@ -30,7 +30,6 @@ public class ImportScreen extends JFrame implements ActionListener{
     JTextField f_name_long_bx = new JTextField();
     JTextField f_type_bx = new JTextField();
 
-    JButton browse_icon = new JButton("Browse Icon");
     JButton browse_image = new JButton("Browse Image");
     JButton ok = new JButton("OK");
     JButton cancel = new JButton("Cancel");
@@ -43,9 +42,10 @@ public class ImportScreen extends JFrame implements ActionListener{
 
     TitledBorder jt;
 
+    java.awt.image.BufferedImage buffered_image;
     Image icon;
-    Image sample;
-    File image_file;
+    Image file_sample_image;
+    File file;
     File icon_file;
 
     Graphics gh;
@@ -97,9 +97,7 @@ public class ImportScreen extends JFrame implements ActionListener{
 
         ok.addActionListener(this);
         cancel.addActionListener(this);
-        browse_icon.addActionListener(this);
         browse_image.addActionListener(this);
-
 
         TitledBorder detail_border = new TitledBorder(name+" Details");
         JPanel tmp_panel = new JPanel(new BorderLayout());
@@ -113,7 +111,6 @@ public class ImportScreen extends JFrame implements ActionListener{
         icon_box.add(Box.createVerticalStrut(10));
         icon_box.add(icon_bx);
         icon_box.add(Box.createVerticalStrut(10));
-        icon_box.add(browse_icon);
         TitledBorder icon_border = new TitledBorder("Icon Preview");
         icon_box.setBorder(icon_border);
         icon_box.setMaximumSize(new Dimension(100,100));
@@ -178,24 +175,27 @@ public class ImportScreen extends JFrame implements ActionListener{
       int result = jfc.showOpenDialog(this);
       if(result == JFileChooser.CANCEL_OPTION) return;
       try {
-          image_file = jfc.getSelectedFile();
-          sample = ImageIO.read(image_file);
-          ImageIcon img_large = new ImageIcon(sample);
+          file = jfc.getSelectedFile();
+          buffered_image = javax.imageio.ImageIO.read(file);
+          file_sample_image = ImageIO.read(file);
+          ImageIcon img_large = new ImageIcon(file_sample_image);
           image_label.setIconTextGap(0);
           image_label.setIcon(img_large);
-          icon_label.setIcon(img_large);
-          String tmp[] = image_file.getName().split("\\.");
+
+          java.awt.Image tmp_image = Toolkit.getDefaultToolkit().createImage(file_sample_image.getSource());
+          java.awt.Image icon_image = tmp_image.getScaledInstance(35, 35, 10);
+//          icon_label.setIcon(img_large);
+          String tmp[] = file.getName().split("\\.");
 //          System.out.println(tmp[0]);
           f_name_short_bx.setText(tmp[0]);
           f_name_long_bx.setText(tmp[0]);
-          if(icon_file==null)icon_file = image_file;
-
       }
 
       catch (Exception e) {
          JOptionPane.showMessageDialog(this,e.getMessage(),
          "File error",JOptionPane.ERROR_MESSAGE);
-      return;}
+        return;
+      }
         }
 
         if(ae.getActionCommand().equals("OK")){
@@ -203,15 +203,21 @@ public class ImportScreen extends JFrame implements ActionListener{
             new_parameters[0] = f_name_short_bx.getText();
             new_parameters[1] = f_name_long_bx.getText();
             new_parameters[2] = f_type_bx.getText();
-            new_parameters[3] = icon_file.toURI().toString();
-            new_parameters[4] = image_file.toURI().toString();
+//            new_parameters[3] = icon_file.toURI().toString();
+//            new_parameters[4] = file.toURI().toString();
 //            Fabric fabric = new Fabric(f_name_short_bx.getText(), f_name_long_bx.getText(), f_type_bx.getText(), icon_file.toURI(), image_file.toURI());
 //            rt.addFabric(fabric);
             if(name.equals("Fabric")){
-                rt.addFabric(new_parameters);
+                Fabric new_fabric = new Fabric(f_name_short_bx.getText(), f_name_long_bx.getText(), f_type_bx.getText(), file_sample_image);
+                rt.addFabric(new_fabric);
+                rt.setVisible(true);
+                this.setVisible(true);
             }
             else if(name.equals("Button")){
-                rt.addButton(new_parameters);
+                Fabric new_button = new Fabric(f_name_short_bx.getText(), f_name_long_bx.getText(), f_type_bx.getText(), file_sample_image);
+                rt.addButton(new_button);
+                rt.setVisible(true);
+                this.setVisible(true);
             }
             icon_file = null;            
         }

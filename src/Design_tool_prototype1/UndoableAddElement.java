@@ -56,7 +56,7 @@ public class UndoableAddElement extends AbstractUndoableEdit{
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("    UNDO-UndoableAddElement");
+//        System.out.println("    UNDO-UndoableAddElement");
 
         Runnable r = new Runnable(){
           public void run(){

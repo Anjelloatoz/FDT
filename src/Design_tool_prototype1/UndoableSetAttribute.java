@@ -44,7 +44,6 @@ public class UndoableSetAttribute extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
-        System.out.println("Came into the UndoableSetAttribute redo");
 
         Runnable r = new Runnable(){
           public void run(){
@@ -57,7 +56,6 @@ public class UndoableSetAttribute extends AbstractUndoableEdit{
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("Came into the UndoableSetAttribute undo");
 
         Runnable r = new Runnable(){
           public void run(){

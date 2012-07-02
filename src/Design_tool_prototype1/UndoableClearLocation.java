@@ -20,7 +20,6 @@ public class UndoableClearLocation extends AbstractUndoableEdit{
         this.foreign_location = location;
         this.location = (Point2D)location.clone();
         foreign_location = null;
-        System.out.println("Came into the UndoableEdit");
     }
 
     public String getPresentationName(){
@@ -30,12 +29,10 @@ public class UndoableClearLocation extends AbstractUndoableEdit{
     public void redo() throws CannotRedoException{
         super.redo();
         foreign_location = null;
-        System.out.println("Came into the UndoableClearLocation redo");
     }
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("Came into the UndoableClearLocation undo");
         foreign_location = location;
     }
 }
