@@ -160,6 +160,7 @@ System.out.println("In the DROP The dragging node is: "+draggedNode.toString());
         Element station_element = (Element)station.getUserObject();
         Element guest_element = (Element)guest.getUserObject();
         Boolean copy = false;
+        Element new_object = null;
 
         try{
             System.out.println("The station element is:: "+station_element.getLocalName());
@@ -180,13 +181,13 @@ System.out.println("In the DROP The dragging node is: "+draggedNode.toString());
             dtde.acceptDrop(DnDConstants.ACTION_MOVE);
         }
         catch(Exception e1){
-            System.out.println("Element adding error: "+e1);
             Element copy_layer = (Element)guest_element.cloneNode(true);
             System.out.println("pass 1");
             copy_layer.setAttribute("id", "copy_"+guest_element.getAttribute("id"));
             System.out.println("pass 2");
             copy_layer.setAttributeNS (null, "stroke", "red");
             System.out.println("pass 3");
+            new_object = copy_layer;
             station_element.appendChild(svgc.createNewLayer(copy_layer));
             System.out.println("pass 4");
             copy = true;
@@ -197,6 +198,9 @@ System.out.println("In the DROP The dragging node is: "+draggedNode.toString());
 //            dtde.acceptDrop(DnDConstants.ACTION_MOVE);
             System.out.println("Accepted");
             Object droppedObject = dtde.getTransferable().getTransferData(localObjectFlavor);
+            if(copy){
+                droppedObject = new_object;
+            }
             MutableTreeNode droppedNode = null;
             if(droppedObject instanceof MutableTreeNode){
                 droppedNode = (MutableTreeNode)droppedObject;
@@ -218,6 +222,7 @@ System.out.println("In the DROP The dragging node is: "+draggedNode.toString());
 //            else{
                 ((DefaultTreeModel)getModel()).insertNodeInto(droppedNode, dropNode, dropNode.getChildCount());
 //            }
+
 
             dropped = true;
         }

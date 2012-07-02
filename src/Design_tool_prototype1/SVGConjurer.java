@@ -60,6 +60,8 @@ import javax.swing.event.*;
 import javax.swing.undo.*;
 import java.awt.*;
 import java.awt.event.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 
 public class SVGConjurer extends JFrame implements ChangeListener, MouseListener, MouseMotionListener, KeyListener {
 	static final long serialVersionUID = 333333;
@@ -182,6 +184,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 Cursor paint_cursor = new Cursor(Cursor.CROSSHAIR_CURSOR);
 		JPanel panel = new JPanel();
 		JPanel p = new JPanel();
+
 
                 try{
                 File nat_file = new File("FW.PNG");
@@ -688,7 +691,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             if(location_list.size()>0){
                 urcl = new UndoableRemoveChildList(this, (Element)location_list.get(0).getParentNode(), location_list);
                 compound_edit.addEdit(urcl);
-                System.out.println("The child list was emptied.");
             }
 
             p3("In the finish drawing location_coordinates_list: "+location_coordinates_list.size());
@@ -747,7 +749,9 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         public void addNewPattern(){
             Element root = document.getDocumentElement();
             patternObject po = new patternObject();
-            po.front = document.createElementNS(svgNS, "svg");
+            Element new_front = document.createElementNS(svgNS, "svg");
+            new_front.setAttribute("id", "front");
+            po.front = new_front;
             root.appendChild(po.front);
             uapo = new UndoableAddPatternObject(po, project_object, th, rt);
             compound_edit.addEdit(uapo);
@@ -1508,7 +1512,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         public void fillPattern(){
-            p1(selected_shape.getAttribute("fill"));
+//            p1(selected_shape.getAttribute("fill"));
             final String DATA_PROTOCOL_PNG_PREFIX = "data:image/png;base64,";
             /********************/
 
@@ -1522,7 +1526,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 encoder.encode(fill_image);
             }
             catch(Exception ec){
-                System.out.println("Line 1596: Create Buffered Image error: "+ec);
+                System.out.println("Line 1529: Create Buffered Image error: "+ec);
             }
             try{
                 b64Encoder.close();
@@ -1694,6 +1698,13 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             System.out.println("Deleting_drawing is "+selected_shape.getAttribute("id"));
             System.out.println("Deleting drawings parent is "+selected_shape.getParentNode().getLocalName());
             System.out.println("Deleting drawings parents parent is "+selected_shape.getParentNode().getParentNode().getLocalName());
+
+            DefaultMutableTreeNode dmtn = null;
+            JTree t = th.getTree();
+
+            dmtn = th.seekNodeByObject(selected_shape, (DefaultMutableTreeNode)t.getModel().getRoot());
+            ((DefaultTreeModel)t.getModel()).removeNodeFromParent(dmtn);
+            th.getTree().repaint();
             Runnable r = new Runnable(){
                 public void run(){
 //                    Element root = document.getDocumentElement();
@@ -1703,6 +1714,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             };
             UpdateManager um = canvas.getUpdateManager();
 	    um.getUpdateRunnableQueue().invokeLater(r);
+            refresh();
         }
 
         public void setSelectedDrawing(Element e){
@@ -1710,14 +1722,12 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             if(selected_shape !=null){
                 selected_shape.setAttribute("stroke", "black");
             }
-
             selected_shape = e;
             e.setAttribute("stroke", "blue");
             selected_shape.getParentNode().getParentNode().appendChild(selected_shape.getParentNode());
 /*            Element parent = (Element)selected_shape.getParentNode().getParentNode();
             selected_shape.getParentNode().getParentNode().removeChild(selected_shape.getParentNode());
             parent.appendChild(selected_shape.getParentNode());*/
-
         }
 
 
@@ -2443,6 +2453,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         try{
             Element root = document.getDocumentElement();
 
+
             FileWriter file = new FileWriter ("The Document.svg");
             PrintWriter writer = new PrintWriter (file);
             SVGDocument svgDoc = canvas.getSVGDocument();
@@ -2453,6 +2464,10 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         catch(Exception e){
             System.err.println ("IO problem: " + e.toString () );
         }
+    }
+
+    public void transcoder(JSVGCanvas transcode_canvas, char format){
+
     }
 
     public void SymatricOn(){

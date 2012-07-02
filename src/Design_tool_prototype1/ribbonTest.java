@@ -3,6 +3,7 @@ package Design_tool_prototype1;
 import javax.swing.event.*;
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import javax.swing.plaf.basic.BasicInternalFrameUI;
+import java.awt.image.*;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -601,6 +602,8 @@ increaseSplash();
             catch(Exception ex){
                 System.out.println("Project close Exception");
             }
+            File e = new File("Temp");
+            e.mkdir();
             setBoards();
             projectObject po = new projectObject(svgF.document, svgR.document);
 
@@ -653,6 +656,8 @@ increaseSplash();
 //                svgF.fillUri = fabrics_list.get(Integer.parseInt(tmp[1])).getFabricMainImage().toString();
                 svgF.fill_image = fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricMainImage();
                 svgF.fillPattern();
+                ImageRelations ir = new ImageRelations(fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricMainImage(), fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricNameLong());
+                imageWriterTester(imageToArray(fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricMainImage()));
 //                System.out.println(svgF.fillUri.toString());
             }
             else if(jtb.getName().equals("button")){
@@ -955,6 +960,35 @@ public void projectWriter(projectObject po){
 
     catch(Exception e){
         System.out.println("Line 701: Exception "+e);
+    }
+}
+
+public int[] imageToArray(Image image){
+    int width = image.getWidth(null);
+        int height = image.getHeight(null);
+        int[] fabric_array = new int[width*height];
+
+        PixelGrabber pg = new PixelGrabber(image, 0, 0, width, height, fabric_array, 0, width);
+
+        try{
+            pg.grabPixels();
+        }
+        catch(Exception e){
+            System.out.println("Fabric.java pixelgrabber error: "+e);
+        }
+        return fabric_array;
+}
+
+public void imageWriterTester(int[] p){
+    try{
+        ObjectOutputStream objOut = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream("Image "+".test")));
+        objOut.writeObject(p);
+        objOut.close();
+        System.out.println("project written");
+    }
+
+    catch(Exception e){
+        System.out.println("BufferdImage writing problem: "+e);
     }
 }
 
