@@ -321,13 +321,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 	public void mouseEntered(MouseEvent e) {
             try{
-                document.getDocumentElement().insertBefore(axis_Y, document.getDocumentElement().getFirstChild());
-                document.getDocumentElement().insertBefore(axis_X, document.getDocumentElement().getFirstChild());
-            }
-            catch(Exception ex){
-                System.out.println("First time mouse entry. All OK!");
-            }
-            try{
                 rt.iframe.setSelected(true);
             }
             catch(Exception ex){
@@ -986,7 +979,8 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
 //            System.out.println("Current drawing parent is "+current_drawing.getParentNode().getLocalName()+" "+((Element)current_drawing.getParentNode()).getAttribute("id"));
             setSelectedDrawing(current_drawing);
-            
+            document.getDocumentElement().insertBefore(axis_Y, document.getDocumentElement().getFirstChild());
+            document.getDocumentElement().insertBefore(axis_X, document.getDocumentElement().getFirstChild());
         }
 
         public void addNewLayer(Element element){
