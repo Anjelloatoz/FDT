@@ -141,6 +141,7 @@ public class treeHandler implements ActionListener, MouseListener{
                     owner_number = i;
                     last_node = new IconNode(((Element)e.getChildNodes().item(i)));
                 }
+
             }
             if(last_node!=null){
                 for(int i = 0; i < e.getChildNodes().getLength(); i++){
@@ -155,12 +156,27 @@ public class treeHandler implements ActionListener, MouseListener{
                 return root_node;
             }
         }
+        else if(e.getLocalName().equals("path")){
+            last_node = new IconNode((Element)e);
+            root_node.add(last_node);
+            return root_node;
+        }
+        else if(e.getLocalName().equals("text")){
+            last_node = new IconNode((Element)e);
+            root_node.add(last_node);
+            return root_node;
+        }
         else return root_node;
     }
 
     public JTree getTree(){
         return tree;
     }
+
+    public void seekNodeByObject(Object object){
+
+    }
+
     public DefaultMutableTreeNode seekNodeByObject(Object object, DefaultMutableTreeNode root){
         DefaultMutableTreeNode found_node = null;
 
@@ -238,14 +254,23 @@ public class treeHandler implements ActionListener, MouseListener{
             DefaultMutableTreeNode clicked_node = (DefaultMutableTreeNode)tree.getSelectionPath().getLastPathComponent();
             try{
                 Element clicked_element = (Element)clicked_node.getUserObject();
-                svgc.setSelectedDrawing(clicked_element);
-                svgc.refresh();
-                System.out.println("This node has: "+clicked_node.getUserObject());
+                rt.selectedSVGC.setSelectedDrawing(clicked_element);
+                rt.selectedSVGC.refresh();
                 if(clicked_element.getOwnerDocument().isSameNode(rt.svgF.document)){
-                    System.out.println("This element is from the front document.");
+//                    System.out.println("This element is from the front document.");
                 }
                 if(clicked_element.getOwnerDocument().isSameNode(rt.svgR.document)){
-                    System.out.println("This element is from the rear document.");
+//                    System.out.println("This element is from the rear document.");
+                }
+                if(clicked_element.getLocalName().equals("text")){
+                    rt.text_type_area.setText(clicked_element.getFirstChild().getFirstChild().getTextContent());
+                    rt.getRibbon().setSelectedTask(rt.getRibbon().getTask(4));
+                    rt.selectedSVGC.selected_text = clicked_element;
+                    rt.selectedSVGC.selected_shape = null;
+                }
+                else if(clicked_element.getLocalName().equals("path")){
+                    rt.getRibbon().setSelectedTask(rt.getRibbon().getTask(0));
+                    rt.selectedSVGC.textPath = false;
                 }
             }
             catch(Exception e2){

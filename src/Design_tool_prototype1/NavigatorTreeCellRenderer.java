@@ -21,6 +21,7 @@ class NavigatorTreeCellRenderer extends DefaultTreeCellRenderer {
     ImageIcon containerIcon;
     ImageIcon buttonIcon;
     ImageIcon patternHistoryIcon;
+    ImageIcon textIcon;
 
     public NavigatorTreeCellRenderer() {
         projectIcon = new ImageIcon("project_icon.gif");
@@ -30,6 +31,7 @@ class NavigatorTreeCellRenderer extends DefaultTreeCellRenderer {
         rearIcon = new ImageIcon("rear_view_icon.gif");
         containerIcon = new ImageIcon("container_icon.gif");
         patternHistoryIcon = new ImageIcon("pattern_history_icon.gif");
+        textIcon = new ImageIcon("text_icon.gif");
     }
 
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel,boolean expanded,boolean leaf, int row, boolean hasFocus){
@@ -64,6 +66,10 @@ class NavigatorTreeCellRenderer extends DefaultTreeCellRenderer {
                     else if(element.getNodeName().equals("path")){
                         setIcon(getElementIcon(element));
                         setText(element.getAttribute("id"));
+                    }
+                    else if(element.getNodeName().equals("text")){
+                        setIcon(textIcon);
+                        setText(element.getFirstChild().getFirstChild().getTextContent());
                     }
                 }
                 catch(Exception e3){
