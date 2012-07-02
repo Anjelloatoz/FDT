@@ -662,11 +662,28 @@ increaseSplash();
                 tb.svgc = svgR;
                 ctrlp.svgc = svgR;
                 selectedSVGC = svgR;
+                ElementLocalizer el = new ElementLocalizer(svgR.other_side, svgF.getRearView(), svgF, svgR);
+                try{
+                    svgR.other_side.removeChild(svgR.other_side.getFirstChild());
+                }
+                catch(Exception exc){
+                    System.out.println("could not remove the other side: 670 "+exc);
+                }
+                svgR.other_side.appendChild(el.container.getFirstChild());
             }
             else{
                 tb.svgc = svgF;
                 ctrlp.svgc = svgF;
                 selectedSVGC = svgF;
+                ElementLocalizer el = new ElementLocalizer(svgF.other_side, svgR.getRearView(), svgF, svgR);
+                try{
+                    svgF.other_side.removeChild(svgF.other_side.getFirstChild());
+                }
+                catch(Exception exc){
+                    System.out.println("Could not remove the 680: "+exc);
+                }
+                System.out.println("Line 682");
+                svgF.other_side.appendChild(el.container.getFirstChild());
             }
         }
         catch(Exception ex1){
@@ -839,36 +856,8 @@ increaseSplash();
     }
 
     private void closeProject(){
-        NodeList nl = svgF.document.getFirstChild().getChildNodes();
-            java.util.List<Node> deletion_nodes = new ArrayList();
-            for(int i = 0; i < nl.getLength(); i++){
-                System.out.println("Element "+i+": "+((Element)nl.item(i)).getTagName()+" : "+((Element)nl.item(i)).getAttribute("id"));
-
-                if(!(((Element)nl.item(i)).getAttribute("id").equals("axis_X")||((Element)nl.item(i)).getAttribute("id").equals("axis_Y"))){
-                    System.out.println("To be removed:: "+"Element "+i+": "+((Element)nl.item(i)).getTagName()+" : "+((Element)nl.item(i)).getAttribute("id"));
-                    deletion_nodes.add(nl.item(i));
-                }
-            }
-
-            for(int i = 0; i < deletion_nodes.size(); i++){
-                svgF.document.getFirstChild().removeChild(deletion_nodes.get(i));
-            }
-
-            nl = svgR.document.getFirstChild().getChildNodes();
-            deletion_nodes = new ArrayList();
-            for(int i = 0; i < nl.getLength(); i++){
-                System.out.println("Element "+i+": "+((Element)nl.item(i)).getTagName()+" : "+((Element)nl.item(i)).getAttribute("id"));
-
-                if(!(((Element)nl.item(i)).getAttribute("id").equals("axis_X")||((Element)nl.item(i)).getAttribute("id").equals("axis_Y"))){
-                    System.out.println("To be removed:: "+"Element "+i+": "+((Element)nl.item(i)).getTagName()+" : "+((Element)nl.item(i)).getAttribute("id"));
-                    deletion_nodes.add(nl.item(i));
-                }
-            }
-
-            for(int i = 0; i < deletion_nodes.size(); i++){
-                svgR.document.getFirstChild().removeChild(deletion_nodes.get(i));
-            }
-
+        svgF.setPlates();
+        svgR.setPlates();
             navigator_container.removeAll();
             svgF.project_object = null;
             svgR.project_object = null;

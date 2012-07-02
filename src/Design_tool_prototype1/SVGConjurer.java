@@ -102,6 +102,8 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         private Element selected_point;
         private Element selected_button_box;
         private Element clipboard_element;
+        Element other_side;
+        Element this_side;
         Element selected_text;
         Element fill_defs = null;
         Color color = new Color(0,0,0);
@@ -136,8 +138,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         String after_drag_drawing = "";
 
         Point2D prev_point_coords;
-        private SVGGraphics2D generator;
-        boolean axises = false;
         Cursor cross_hair = new Cursor(Cursor.CROSSHAIR_CURSOR);
         Cursor dflt_cursor = new Cursor(Cursor.DEFAULT_CURSOR);
         Cursor hand_cursor = new Cursor(Cursor.HAND_CURSOR);
@@ -206,52 +206,51 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
         }
 	public SVGConjurer(Dimension dim, alterStation as, DrawingBoardFooter dbf, String Identifier){
-		super("SVG Conjurer");
-                this.as = as;
-                this.dbf = dbf;
-                this.IDENTIFIER = Identifier;
-                dbf.manager = manager;
-
-		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                p1("ऒ");
-                Cursor paint_cursor = new Cursor(Cursor.CROSSHAIR_CURSOR);
-		JPanel panel = new JPanel();
-		JPanel p = new JPanel();
-
-
-                try{
+            super("SVG Conjurer");
+            this.as = as;
+            this.dbf = dbf;
+            this.IDENTIFIER = Identifier;
+            dbf.manager = manager;
+            this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            Cursor paint_cursor = new Cursor(Cursor.CROSSHAIR_CURSOR);
+            JPanel panel = new JPanel();
+            JPanel p = new JPanel();
+            try{
                 File nat_file = new File("FW.PNG");
                 natUri = nat_file.toURI().toString();
-//                p1(nat_file.toURI().toString());
-                }
-                catch(Exception e){
-                    p1("file Exception");
-                }
-		canvas = new LJSVGCanvas();
-		canvas.setMySize(dim);
-		canvas.addMouseListener(this);
-                canvas.addMouseMotionListener(this);
-                canvas.addMouseWheelListener(this);
-                canvas.addKeyListener(this);
-		canvas.setDocumentState(JSVGCanvas.ALWAYS_DYNAMIC);
-                canvas.setCursor(paint_cursor);
-                canvas.setRecenterOnResize(true);
-                canvas.setDisableInteractions(true);
-
-		panel.setLayout(new BorderLayout());
-		panel.add("North", p);
-		panel.add("Center", canvas);
-                panel.setCursor(paint_cursor);
-		this.setContentPane(panel);
-		this.pack();
-		this.setBounds(150, 150, this.getWidth(), this.getHeight());
-
-		DOMImplementation dom = SVGDOMImplementation.getDOMImplementation();
-		document = dom.createDocument(svgNS, "svg", null);
-                generator = new SVGGraphics2D (document);
-
-		canvas.setDocument(document);
-	}
+            }
+            catch(Exception e){
+                p1("file Exception");
+            }
+            canvas = new LJSVGCanvas();
+            canvas.setMySize(dim);
+            canvas.addMouseListener(this);
+            canvas.addMouseMotionListener(this);
+            canvas.addMouseWheelListener(this);
+            canvas.addKeyListener(this);
+            canvas.setDocumentState(JSVGCanvas.ALWAYS_DYNAMIC);
+            canvas.setCursor(paint_cursor);
+            canvas.setRecenterOnResize(true);
+            canvas.setDisableInteractions(true);
+            panel.setLayout(new BorderLayout());
+            panel.add("North", p);
+            panel.add("Center", canvas);
+            panel.setCursor(paint_cursor);
+            this.setContentPane(panel);
+            this.pack();
+            this.setBounds(150, 150, this.getWidth(), this.getHeight());
+            DOMImplementation dom = SVGDOMImplementation.getDOMImplementation();
+            document = dom.createDocument(svgNS, "svg", null);
+            canvas.setDocument(document);
+            this_side = document.createElementNS(svgNS, "svg");
+            this_side.setAttribute("id", "this_side");
+            other_side = document.createElementNS(svgNS, "svg");
+            other_side.setAttribute("id", "other_side");
+            document.getDocumentElement().appendChild(other_side);
+            setPlates();
+            drawAxises();
+            document.getDocumentElement().appendChild(this_side);
+        }
 
 	public void mouseClicked(MouseEvent e) {
             removeResizeHandler();
@@ -359,10 +358,9 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 mouse_point = e.getPoint();
             }
             
-            mouse_location = e.getPoint();
-            
-            if(!axises)drawAxises();
+            mouse_location = e.getPoint();            
             axisAdjust();
+
             if (moveable && shift){
                 relocate(e.getX(), e.getY());
             }
@@ -383,7 +381,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             }
 
             if((edit_point_moveable)){
-//                System.out.println(e.getX());
                 currentDrawingDrag();
             }
         }
@@ -402,7 +399,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             else{
                 mouse_point = e.getPoint();
             }
-            if(!axises)drawAxises();
             as.setCoordinates(e.getX(), e.getY());
             axisAdjust();
 
@@ -411,12 +407,10 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             }
         }
 
-	// Changing the coordinates and the radius of the most recent ball
 	public void stateChanged(ChangeEvent e) {
 	}
 
         public void testText(final String font_name){
-//            System.out.println("Selected Text is "+font_name);
             Runnable r = new Runnable(){
                 public void run(){
                     try{
@@ -434,7 +428,12 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         public void testTextColor(final Color text_color){
             Runnable r = new Runnable(){
                 public void run(){
-                    selected_text.setAttribute("fill", "rgb("+text_color.getRed()+","+text_color.getGreen()+","+text_color.getBlue()+")");
+                    try{
+                        selected_text.setAttribute("fill", "rgb("+text_color.getRed()+","+text_color.getGreen()+","+text_color.getBlue()+")");
+                    }
+                    catch(Exception ex){
+                        System.out.println("SVGC: not text operation.");
+                    }
                 }
             };
             UpdateManager um = canvas.getUpdateManager();
@@ -508,25 +507,37 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         private void drawAxises(){
-            axises = true;
-
-            Runnable r = new Runnable() {
-			public void run() {
-				Element root = document.getDocumentElement();
-				axis_X = document.createElementNS(svgNS, "line");
-                                axis_X.setAttributeNS(null, "id", "axis_X");
-				axis_X.setAttributeNS(null, "stroke", "lime");
-				axis_X.setAttributeNS(null, "stroke-width", "1");
-                                axis_Y = document.createElementNS(svgNS, "line");
-                                axis_Y.setAttributeNS(null, "id", "axis_Y");
-				axis_Y.setAttributeNS(null, "stroke", "lime");
-				axis_Y.setAttributeNS(null, "stroke-width", "1");
-				root.appendChild(axis_X);
-                                root.appendChild(axis_Y);
-			}
-		};
-		UpdateManager um = canvas.getUpdateManager();
-		um.getUpdateRunnableQueue().invokeLater(r);
+            Element root = document.getDocumentElement();
+            axis_X = document.createElementNS(svgNS, "line");
+            axis_X.setAttributeNS(null, "id", "axis_X");
+            axis_X.setAttributeNS(null, "stroke", "lime");
+            axis_X.setAttributeNS(null, "stroke-width", "1");
+            axis_Y = document.createElementNS(svgNS, "line");
+            axis_Y.setAttributeNS(null, "id", "axis_Y");
+            axis_Y.setAttributeNS(null, "stroke", "lime");
+            axis_Y.setAttributeNS(null, "stroke-width", "1");
+            root.appendChild(axis_X);
+            root.appendChild(axis_Y);
+        }
+        public void setPlates(){
+            try{
+                document.getDocumentElement().removeChild(other_side);
+            }
+            catch(Exception ex1){
+                System.out.println("Could not emove the other side: "+ex1);
+            }
+            try{
+                document.getDocumentElement().removeChild(this_side);
+            }
+            catch(Exception ex2){
+                System.out.println("Could not emove the this side: "+ex2);
+            }
+            other_side = document.createElementNS(svgNS, "svg");
+            this_side = document.createElementNS(svgNS, "svg");
+            other_side.setAttribute("id", "other_side");
+            this_side.setAttribute("id", "this_side");
+            document.getDocumentElement().insertBefore(other_side, axis_X);
+            document.getDocumentElement().appendChild(this_side);
         }
 
         private void drawPrediction(){
@@ -740,7 +751,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         private void drawArc(){
-            Element root = document.getDocumentElement();
             Element current_drawing;
             if(drawing_in_progress){
                 current_drawing = document.getElementById("drawing_"+project_object.patterns.size());
@@ -819,7 +829,6 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         public void finishPathDragging(){
             System.out.println("In the finish path dragging");
 
-
             if(location_list.size()>0){
                 urcl = new UndoableRemoveChildList(this, (Element)location_list.get(0).getParentNode(), location_list);
                 compound_edit.addEdit(urcl);
@@ -865,77 +874,66 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         public void finishDrawing(final Element destination, final Element current_drawing){
-                  Shape tmp_shape = null;
-                  try{
-                      tmp_shape = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(current_drawing.getAttributeNS(null,"d")), GeneralPath.WIND_EVEN_ODD);
-                  }
-                  catch(Exception ex){
-                      System.out.println("finishDrawing method Exception");
-                  }
-                  
-                  try{
-                      usa = new UndoableSetAttribute(this, current_drawing, "d", current_drawing.getAttributeNS(null, "d")+" Z");
-                      compound_edit.addEdit(usa);
-                  }
-                  catch(Exception e){
-                      System.out.println("Returning in Finishing.");
-                      return;
-                  }
-                  Element g_element = document.createElementNS(svgNS, "g");
-                  g_element.setAttribute("id", "g_"+current_drawing.getAttribute("id"));
+            try{
+                usa = new UndoableSetAttribute(this, current_drawing, "d", current_drawing.getAttributeNS(null, "d")+" Z");
+                compound_edit.addEdit(usa);
+            }
+            catch(Exception e){
+                System.out.println("Returning in Finishing.");
+                return;
+            }
 
-                  Element svg_element = document.createElementNS(svgNS, "svg");
-                  svg_element.setAttribute("id", "svg_"+current_drawing.getAttribute("id"));
-                  svg_element.setAttribute("x", ""+0);
-                  svg_element.setAttribute("y", ""+0);
+            Element g_element = document.createElementNS(svgNS, "g");
+            g_element.setAttribute("id", "g_"+current_drawing.getAttribute("id"));
+            Element svg_element = document.createElementNS(svgNS, "svg");
+            svg_element.setAttribute("id", "svg_"+current_drawing.getAttribute("id"));
+            svg_element.setAttribute("x", ""+0);
+            svg_element.setAttribute("y", ""+0);
 
-                  svg_element.appendChild(g_element);
-                  g_element.appendChild(current_drawing);
+            svg_element.appendChild(g_element);
+            g_element.appendChild(current_drawing);
 //*                  uac = new UndoableAppendChild(this, svg_element, current_drawing);
 //*                  compound_edit.addEdit(uac);
                   
 
-                  if(destination_container == null){
-                      
-                      patternObject po = new patternObject();
-                      po.front = rt.svgF.document.createElementNS(svgNS, "svg");
-                      po.front.setAttribute("id", "frontAnjelloatoz@gmail.com");
-                      po.rear = rt.svgR.document.createElementNS(svgNS, "svg");
-                      po.rear.setAttribute("id", "rearAnjelloatoz@gmail.com");
-//                      root.appendChild(po.front);
-                      Element Root = rt.svgF.document.getDocumentElement();
-                      Root.appendChild(po.front);
-                      Element reverseRoot = rt.svgR.document.getDocumentElement();
-                      reverseRoot.appendChild(po.rear);
-                      if(IDENTIFIER.equals("front")){                          
-                          po.front.appendChild(svg_element);
-                          
-                      }
-                      else{                          
-                          po.rear.appendChild(svg_element);
-                      }
+            if(destination_container == null){
+                patternObject po = new patternObject();
+                po.front = rt.svgF.document.createElementNS(svgNS, "svg");
+                po.front.setAttribute("id", "frontAnjelloatoz@gmail.com");
+                po.rear = rt.svgR.document.createElementNS(svgNS, "svg");
+                po.rear.setAttribute("id", "rearAnjelloatoz@gmail.com");
+                rt.svgF.this_side.appendChild(po.front);
+                rt.svgR.this_side.appendChild(po.rear);
+
+                if(IDENTIFIER.equals("front")){
+                    po.front.appendChild(svg_element);
+                }
+
+                else{
+                    po.rear.appendChild(svg_element);
+                }
 /*                      uac = new UndoableAppendChild(this, root, po.front);
                       compound_edit.addEdit(uac);
                       uac = new UndoableAppendChild(this, root, po.rear);
                       compound_edit.addEdit(uac);*/
-                      
 
-                      uapo = new UndoableAddPatternObject(po, project_object, th, rt);
-                      compound_edit.addEdit(uapo);
-                      th.refreshTree(project_object, rt);
-                  }
 
-                  else{
-                      uac = new UndoableAppendChild(this, (Element)destination_container.getParentNode(), svg_element);
-                      compound_edit.addEdit(uac);
-                      th.refreshTree(project_object, rt);
-                  }
+                uapo = new UndoableAddPatternObject(po, project_object, th, rt);
+                compound_edit.addEdit(uapo);
+                th.refreshTree(project_object, rt);
+            }
+
+            else{
+                uac = new UndoableAppendChild(this, (Element)destination_container.getParentNode(), svg_element);
+                compound_edit.addEdit(uac);
+                th.refreshTree(project_object, rt);
+            }
                   
-                  registerPatternListeners(current_drawing);
-                  System.out.println("The node value of element is ");
+            registerPatternListeners(current_drawing);
+            System.out.println("The node value of element is ");
 
-                  udni = new UndoableDrawingNumberIncrease(this);
-                  compound_edit.addEdit(udni);
+            udni = new UndoableDrawingNumberIncrease(this);
+            compound_edit.addEdit(udni);
 
             p3("In the finish drawing location_list: "+location_list.size());
 /*            for(int i = 0; i < location_list.size(); i++){
@@ -977,20 +975,17 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             compound_edit.addEdit(uclc);
 //            destination_container = null;
 
-//            System.out.println("Current drawing parent is "+current_drawing.getParentNode().getLocalName()+" "+((Element)current_drawing.getParentNode()).getAttribute("id"));
             setSelectedDrawing(current_drawing);
-            document.getDocumentElement().insertBefore(axis_Y, document.getDocumentElement().getFirstChild());
-            document.getDocumentElement().insertBefore(axis_X, document.getDocumentElement().getFirstChild());
         }
 
         public void addNewLayer(Element element){
             Element root = document.getDocumentElement();
-            int number_of_svgs = root.getElementsByTagName("svg").getLength();
+            int number_of_svgs = this_side.getElementsByTagName("svg").getLength();
             Element new_container = document.createElementNS(svgNS, "svg");
             new_container.setAttribute("id", "svg_drawing_"+number_of_svgs+1);
             new_container.appendChild(element);
             registerPatternListeners(element);
-            root.appendChild(new_container);
+            this_side.appendChild(new_container);
             refresh();
             th.refreshTree(project_object, rt);
         }
@@ -1003,8 +998,8 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             new_front.setAttribute("id", "rear");
             po.front = new_front;
             po.rear = new_rear;
-            root.appendChild(po.front);
-            rt.svgR.document.getDocumentElement().appendChild(po.rear);
+            this_side.appendChild(po.front);
+            rt.svgR.this_side.appendChild(po.rear);
             uapo = new UndoableAddPatternObject(po, project_object, th, rt);
             compound_edit.addEdit(uapo);
             th.refreshTree(project_object, rt);
@@ -1012,11 +1007,8 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
         public Element reverseMaker(Node root){
             NodeList nl = root.getChildNodes();
-            System.out.println("nl's length: "+nl.getLength());
             for(int i = 0; i < nl.getLength(); i++){
                 try{
-                    System.out.println("nl.item(nl.getLength()-1): "+nl.item(nl.getLength()-1).getLocalName());
-                    System.out.println("nl.item(i): "+nl.item(i).getLocalName());
                     if(nl.item(nl.getLength()-1).hasChildNodes()){
                         reverseMaker(nl.item(nl.getLength()-1));
                     }
@@ -1024,12 +1016,10 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                     root.insertBefore(nl.item(nl.getLength()-1), nl.item(i));
                 }
                 catch(Exception ex){
-                    System.out.println("Could not insert the node: "+ex);
+                    System.out.println("SVGConjurer Could not insert the node: "+ex);
                     root.appendChild(nl.item(nl.getLength()-1));
-                }                
-                System.out.println("roots first child: "+root.getFirstChild().getLocalName());
+                }
             }
-            System.out.println("Before sending the root has children: "+root.getChildNodes().getLength());
             return (Element)root;
         }
 
@@ -1197,33 +1187,27 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                     defs.setAttribute("id", "guide image defs");
                     Element root = document.getDocumentElement();
                     root.appendChild(defs);
-
-                  my_image.setAttributeNS(XLINK_NAMESPACE_URI, "xlink:href", image_path);
-                  my_image.setAttributeNS(null, "id", "natasha_png");
-
-                  int location_x = canvas.getWidth()/2-width/2;
-                  int location_y = canvas.getHeight()/2-height/2;
-
-                  if (location_x < 0) location_x = 0;
-                  if (location_y < 0) location_y = 0;
-                  my_image.setAttributeNS(null, "x", location_x+"");
-                  my_image.setAttributeNS (null, "y", location_y+"");
-                  my_image.setAttributeNS(null, "width", width+"");
-		  my_image.setAttributeNS(null, "height", height+"");
-                  my_image.setAttributeNS(null, "opacity", "0.7");
-
-                  Element pattern = document.createElementNS(svgNS, "pattern");
-                  pattern.setAttributeNS(null, "id", "pattern"+project_object.patterns.size());
-                  pattern.setAttributeNS(null, "patternUnits", "userSpaceOnUse");
-                  pattern.setAttributeNS(null, "width", "0.5in");
-                  pattern.setAttributeNS(null, "height", "0.5in");
-                  pattern.setAttributeNS(null, "x", "0.5in");
-                  pattern.setAttributeNS(null, "y", "0.5in");
-
-                  pattern.appendChild(my_image);
-                  defs.appendChild(pattern);
-
-                  root.appendChild(my_image);
+                    my_image.setAttributeNS(XLINK_NAMESPACE_URI, "xlink:href", image_path);
+                    my_image.setAttributeNS(null, "id", "natasha_png");
+                    int location_x = canvas.getWidth()/2-width/2;
+                    int location_y = canvas.getHeight()/2-height/2;
+                    if (location_x < 0) location_x = 0;
+                    if (location_y < 0) location_y = 0;
+                    my_image.setAttributeNS(null, "x", location_x+"");
+                    my_image.setAttributeNS (null, "y", location_y+"");
+                    my_image.setAttributeNS(null, "width", width+"");
+                    my_image.setAttributeNS(null, "height", height+"");
+                    my_image.setAttributeNS(null, "opacity", "0.7");
+                    Element pattern = document.createElementNS(svgNS, "pattern");
+                    pattern.setAttributeNS(null, "id", "pattern"+project_object.patterns.size());
+                    pattern.setAttributeNS(null, "patternUnits", "userSpaceOnUse");
+                    pattern.setAttributeNS(null, "width", "0.5in");
+                    pattern.setAttributeNS(null, "height", "0.5in");
+                    pattern.setAttributeNS(null, "x", "0.5in");
+                    pattern.setAttributeNS(null, "y", "0.5in");
+                    pattern.appendChild(my_image);
+                    defs.appendChild(pattern);
+                    document.getDocumentElement().insertBefore(my_image, axis_X);
                 }
             };
             UpdateManager um = canvas.getUpdateManager();
@@ -1260,7 +1244,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         public JSVGCanvas getBoard(){
-        return canvas;
+            return canvas;
         }
 
         public void patternSplitter(){
@@ -2106,54 +2090,38 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         public void setSelectedDrawing(Element e){
-            System.out.println("Came into the set selected drawing");
             textPath = false;
-            System.out.println("Test point 01");
             if(!e.getLocalName().equals("path")) return;
-            System.out.println("Test point 02");
             if(selected_shape !=null){
                 selected_shape.setAttribute("stroke", "black");
             }
-            System.out.println("Test point 03");
             selected_shape = e;
             e.setAttribute("stroke", "red");
-            System.out.println("Test point 04");
             try{
                 selected_shape_boundry = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(selected_shape.getAttributeNS(null,"d")), GeneralPath.WIND_EVEN_ODD);
-                System.out.println("Test point 05");
             }
             catch(Exception ex){
                 p1("Exception caught at setSelectedDrawing");
             }
-System.out.println("Test point 06");
             selected_shape.getParentNode().getParentNode().appendChild(selected_shape.getParentNode());
             refresh();
-            System.out.println("Selected shapes parents parent is: "+(selected_shape.getParentNode().getParentNode()).getLocalName());
-            System.out.println("Test point 07");
             matrix = SVGLocatableSupport.getScreenCTM(selected_shape);
-            System.out.println("Matrix A: "+matrix.getA());
-            System.out.println("Test point 08");
             AffineTransform at = new AffineTransform(matrix.getA(), matrix.getB(), matrix.getC(), matrix.getD(), matrix.getE(), matrix.getF());
-            System.out.println("Test point 09");
             try{
                 mouse_transformer = at.createInverse();
-                System.out.println("Test point 10");
             }
             catch(Exception ex){
                 System.out.println("matrix to mouse transformer exception: "+ex);
             }
-System.out.println("Test point 11");
             if(resize_handler!=null){
                 try{
                     document.getDocumentElement().removeChild(document.getElementById("resizer_holder"));
-                    System.out.println("Test point 12");
                 }
                 catch(Exception ex){
                     System.out.println("RESIZE HANDLER REMOVAL FAILURE");
                 }
             }
             resizer();
-            System.out.println("Test point 13");
         }
 
         public void splitHandler(){
@@ -2346,7 +2314,12 @@ System.out.println("Test point 11");
          SVGRect rect = SVGLocatableSupport.getBBox(e1);
          e1.setAttribute ("stroke", "red");
          e1.setAttributeNS(null, "pathLength", "200");
-         canvas.setCursor(hand_cursor);
+         try{
+             canvas.setCursor(hand_cursor);
+         }
+         catch(Exception excep){
+             System.out.println("Line 2321 Exception caught: "+excep);
+         }
         }
       }
 
@@ -2759,13 +2732,8 @@ String tmp = x+" "+y;
     public void relocate(final int x, final int y){
         Runnable r = new Runnable(){
             public void run(){
-                System.out.append("parent: "+((Element)(selected_shape.getParentNode().getParentNode())).getLocalName());
-                System.out.println("selected_shape_station_point: "+selected_shape_station_point);
-                System.out.println("shape_X: "+shape_X);
-                //selected_shape.setAttribute("transform", "translate("+shape_X+" "+shape_Y+")");
                 ((Element)(selected_shape.getParentNode().getParentNode())).setAttribute("x", ""+(selected_shape_station_point.getX()+shape_X));
                 ((Element)(selected_shape.getParentNode().getParentNode())).setAttribute("y", ""+(selected_shape_station_point.getY()+shape_Y));
-//                ((Element)selected_shape.getParentNode()).setAttribute("x", ""+shape_X);
             }
         };
         UpdateManager um = canvas.getUpdateManager();
@@ -2996,19 +2964,19 @@ String tmp = x+" "+y;
             public void run(){
                 axis_X.setAttribute("x1","0");
                 if(!alt){
-                    axis_X.setAttribute("y1",""+(mouse_location.getY()+1));
+                    axis_X.setAttribute("y1",""+(mouse_location.getY()));
                 }
                 axis_X.setAttribute("x2",""+getWidth());
                 if(!alt){
-                    axis_X.setAttribute("y2",""+(mouse_location.getY()+1));
+                    axis_X.setAttribute("y2",""+(mouse_location.getY()));
                 }
 
                 if(!ctrl){
-                    axis_Y.setAttribute("x1",""+(mouse_location.getX()+1));
+                    axis_Y.setAttribute("x1",""+(mouse_location.getX()));
                 }
                 axis_Y.setAttribute("y1","0");
                 if(!ctrl){
-                    axis_Y.setAttribute("x2",""+(mouse_location.getX()+1));
+                    axis_Y.setAttribute("x2",""+(mouse_location.getX()));
                 }
                 axis_Y.setAttribute("y2",""+getHeight());                
             }
@@ -3037,32 +3005,31 @@ String tmp = x+" "+y;
         catch(Exception e){
             System.err.println ("IO problem: " + e.toString () );
         }
+    }
+
+    public Element getRearView(){
+        Element reverse_element = null;
         try{
-            Element new_root = (Element)document.getDocumentElement().cloneNode(true);
-            NodeList nl = new_root.getElementsByTagName("line");
-            new_root.removeChild(nl.item(0));
-            new_root.removeChild(nl.item(0));
-            System.out.print("Check point 03");
-            SVGRect rear_rect = this.BoundryFinder(new_root, null);
-            System.out.print("Check point 04");
-            new_root.setAttribute("scale", "(-1,1)");
-            System.out.print("Check point 05");
-            float x = (rear_rect.getX()*2)+rear_rect.getWidth();
-            System.out.print("Check point 06");
-            x = -x;
-            System.out.print("Check point 07");
-            new_root.setAttribute("translate", "("+x+")");
-            System.out.print("Check point 08");
+            Element new_root = (Element)document.getElementById("this_side").cloneNode(true);
+            Rectangle rear_rect = this.BoundryFinder(this_side, null);
+            float x = (float)((rear_rect.getX()*2)+rear_rect.getWidth());
+            Element group = document.createElementNS(svgNS, "g");
+            group.setAttribute("id", "group");
+
+            System.out.print("rear_rect X: "+rear_rect.x);
+            System.out.print("rear_rect Width: "+rear_rect.width);
+
+            group.appendChild(new_root);
+
+            group.setAttribute("transform", "translate("+x+") scale(-1,1)");
             new_root.setAttribute("opacity", "0.5");
-            System.out.print("Check point 09");
-            Element reverse_element = reverseMaker(new_root);
-            System.out.print("Check point 10");
-            rearFilePrinter(reverse_element);
-            System.out.print("Check point 11");
+            reverse_element = reverseMaker(group);
+            rearFilePrinter(reverse_element);            
         }
         catch(Exception exc){
-            System.out.println("Line 3052: "+exc);
+            System.out.println("Line 3053: "+exc);
         }
+        return reverse_element;
     }
 
     public void rearFilePrinter(Element rear_root){
@@ -3138,13 +3105,10 @@ String tmp = x+" "+y;
         }
     }
 
-    public SVGRect BoundryFinder(Element element, SVGRect rect){
-        System.out.println("BoundryFinder 01");
-        System.out.println("The sent element is: "+element.getLocalName()+" - "+element.getAttribute("id"));
+    public Rectangle BoundryFinder(Element element, Rectangle rect){
         if(rect == null){
-            System.out.println("BoundryFinder 02");
-            rect = SVGLocatableSupport.getBBox(element);
-            System.out.println("BoundryFinder 03");
+            SVGRect svg_rect = SVGLocatableSupport.getBBox(element);
+            rect = new Rectangle((int)svg_rect.getX(), (int)svg_rect.getY(), (int)svg_rect.getWidth(), (int)svg_rect.getHeight());
         }
         if(element.getLocalName().equals("svg")){
             for(int i = 0; i < element.getChildNodes().getLength(); i++){
@@ -3157,36 +3121,28 @@ String tmp = x+" "+y;
             }
         }
         else{
-            System.out.println("BoundryFinder 04");
             SVGRect local_rect = SVGLocatableSupport.getBBox(element);
-            System.out.println("BoundryFinder 05");
             float local_x1 = local_rect.getX();
-            System.out.println("BoundryFinder 06");
             float local_y1 = local_rect.getY();
-            System.out.println("BoundryFinder 07");
             float local_x2 = local_rect.getX()+local_rect.getWidth();
             float local_y2 = local_rect.getY()+local_rect.getHeight();
-System.out.println("BoundryFinder 08");
-            float rect_x1 = rect.getX();
-            float rect_y1 = rect.getY();
-            float rect_x2 = rect.getX()+rect.getWidth();
-            float rect_y2 = rect.getY()+rect.getHeight();
-System.out.println("BoundryFinder 09");
+            float rect_x1 = (float)rect.getX();
+            float rect_y1 = (float)rect.getY();
+            float rect_x2 = (float)rect.getX()+(float)rect.getWidth();
+            float rect_y2 = (float)rect.getY()+(float)rect.getHeight();
             if(local_x1 < rect_x1){
-                rect.setX(local_x1);
+                rect.x = (int)local_x1;
             }
             if(local_y1 < rect_y1){
-                rect.setY(local_y1);
+                rect.y = (int)rect_y1;
             }
             if(local_x2 > rect_x2){
-                rect.setWidth(local_x2-rect_x1);
+                rect.width = (int)(local_x2-rect_x1);
             }
             if(local_y2 > rect_y2){
-                rect.setHeight(local_y2-rect_y1);
+                rect.height = (int)(local_y2-rect_y1);
             }
-System.out.println("BoundryFinder 10");
         }
-        System.out.println("BoundryFinder 11");
         return rect;
     }
 
