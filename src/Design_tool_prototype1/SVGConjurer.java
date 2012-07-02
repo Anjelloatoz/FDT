@@ -60,7 +60,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         Point2D last_location = null;
         java.util.List<Point2D> current_drawing_locations = new ArrayList();
         java.util.List<Point2D> whole_path_locations_list = new ArrayList();
-        private boolean drawing_in_progress = false;
+        boolean drawing_in_progress = false;
         private int drawing_number = 0;
 	JSVGCanvas canvas;
 	Document document;
@@ -114,6 +114,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         UndoableAddPointParameterSetter uapps;
         UndoableAddLocationCoordinates ualc;
         UndoableAddLocation ual;
+        UndoableAddLine ualn;
 
 	public SVGConjurer(Dimension dim, alterStation as, DrawingBoardFooter dbf) {
 		super("SVG Conjurer");
@@ -171,12 +172,14 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 drawLocationCoordinates();
                 drawLocation();
 */
-                removeElement(document.getElementById("prediction"));
-                drawPrediction();
+                
 
                 if(current_drawing_locations.size() == shape_type_number){
                     drawSegment();
                 }
+
+//                removeElement(document.getElementById("prediction"));
+//                drawPrediction();
             }
 	}
 
@@ -263,7 +266,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
             axisAdjust();
 
             if(last_location != null){
-                adjustPrediction();
+//                adjustPrediction();
             }
         }
 
@@ -450,7 +453,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         private void drawSegment(){
 //            drawImage();
             if(shape_type_number == 2) {
-                drawLine();
+                addLine();
             }
             if(shape_type_number == 4) {
                 drawArc();
@@ -458,34 +461,28 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
 
         }
 
-        private void drawLine(){
-            Runnable r = new Runnable() {
-			public void run() {
-				Element root = document.getDocumentElement();
-                                Element current_drawing;
-                                if(drawing_in_progress){
-                                    current_drawing = document.getElementById("drawing_"+drawing_number);
-                                }
-                                else{
-                                    current_drawing = document.createElementNS(svgNS, "path");
-                                    current_drawing.setAttributeNS (null, "id", "drawing_"+drawing_number);
-                                    current_drawing.setAttributeNS(null, "pathLength", "100");
-                                    current_drawing.setAttributeNS (null, "stroke", "black");
-                                    current_drawing.setAttributeNS (null, "stroke-width", "1");
-                                    current_drawing.setAttributeNS(null, "fill", "none");
-                                    root.appendChild(current_drawing);
-                                    current_drawing.setAttributeNS(null, "d", "M "+current_drawing_locations.get(0).getX()+" "+current_drawing_locations.get(0).getY());
-                                }
+        private Element drawLine(){
+            Element root = document.getDocumentElement();
+            Element current_drawing;
+            if(drawing_in_progress){
+                current_drawing = document.getElementById("drawing_"+drawing_number);
+                current_drawing.getParentNode().removeChild(current_drawing);
+            }
+            else{
+                current_drawing = document.createElementNS(svgNS, "path");
+                current_drawing.setAttributeNS (null, "id", "drawing_"+drawing_number);
+                current_drawing.setAttributeNS(null, "pathLength", "100");
+                current_drawing.setAttributeNS (null, "stroke", "black");
+                current_drawing.setAttributeNS (null, "stroke-width", "1");
+                current_drawing.setAttributeNS(null, "fill", "none");
+                current_drawing.setAttributeNS(null, "d", "M "+current_drawing_locations.get(0).getX()+" "+current_drawing_locations.get(0).getY());
+            }
+            current_drawing.setAttributeNS(null, "d", current_drawing.getAttributeNS(null, "d")+" L "+current_drawing_locations.get(1).getX()+" "+current_drawing_locations.get(1).getY());
+            current_drawing_locations.clear();
+            current_drawing_locations.add(last_location);
+            drawing_in_progress = true;
 
-                                current_drawing.setAttributeNS(null, "d", current_drawing.getAttributeNS(null, "d")+" L "+current_drawing_locations.get(1).getX()+" "+current_drawing_locations.get(1).getY());
-                                current_drawing_locations.clear();
-                                current_drawing_locations.add(last_location);
-                                drawing_in_progress = true;
-			}
-		};
-
-		UpdateManager um = canvas.getUpdateManager();
-		um.getUpdateRunnableQueue().invokeLater(r);
+            return current_drawing;
         }
 
         private void drawArc(){
@@ -2020,23 +2017,17 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
     }
 
     private void addPoint(){
-        p2("Add point called");
         uapps = new UndoableAddPointParameterSetter(this);
 
         Element coord_X = createLocationCoordinateX();
         Element coord_Y = createLocationCoordinateY();
 
         ualc = new UndoableAddLocationCoordinates(this, coord_X, coord_Y);
-//        ualc.addEdit(uapps);
-
 
         Element location = drawLocation();
 
         ual = new UndoableAddLocation(this, location, location_list, document);
-//        ual.addEdit(ualc);
 
-//        uapps.addEdit(ualc);
-//        uapps.addEdit(ual);
         CompoundEdit ce = new CompoundEdit();
         ce.addEdit(uapps);
         ce.addEdit(ualc);
@@ -2044,9 +2035,15 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         ce.end();
 
         manager.addEdit(ce);
-//        manager.addEdit(ualc);
-//        manager.addEdit(ual);
+        dbf.manager = manager;
+        dbf.updateButtons();
+    }
 
+    public void addLine(){
+        Element line = drawLine();
+        ualn = new UndoableAddLine(this, line);
+
+        manager.addEdit(ualn);
         dbf.manager = manager;
         dbf.updateButtons();
     }
