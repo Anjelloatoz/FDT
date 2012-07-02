@@ -150,8 +150,8 @@ public class App extends JRibbonFrame implements ChangeListener, ActionListener{
         }
 
                             DecoratedResizableIcon dri = new DecoratedResizableIcon(
-						new DisabledResizableIcon(RibbonElementPriority.TOP, 52, 52), new App.IconImageDecoration(image),
-						new App.BottomRightDecoration(j));
+						new DisabledResizableIcon(RibbonElementPriority.TOP, 52, 52), new IconImageDecoration(image),
+						new BottomRightDecoration(j));
                             JCommandToggleButton jtb  = new JCommandToggleButton("Texture "  + j, dri);
                             jtb.addActionListener(this);
 
