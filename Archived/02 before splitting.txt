@@ -1,0 +1,525 @@
+package Design_tool_prototype1;
+
+import java.awt.event.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.geom.Point2D;
+import java.util.*;
+
+import java.awt.*;
+
+import org.w3c.dom.events.Event;
+import org.w3c.dom.events.EventListener;
+import org.w3c.dom.events.EventTarget;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.*;
+
+import org.apache.batik.bridge.UpdateManager;
+import org.apache.batik.dom.svg.SVGDOMImplementation;
+import org.apache.batik.swing.JSVGCanvas;
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import java.io.File;
+import java.awt.geom.AffineTransform;
+import java.io.StringReader;
+
+
+public class SVGConjurer extends JFrame implements ChangeListener, MouseListener, MouseMotionListener {
+	static final long serialVersionUID = 333333;
+	// Namespace string, to be used throughout the class
+	private final String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
+        static final String XLINK_NAMESPACE_URI = "http://www.w3.org/1999/xlink";
+
+	// Center coordinates and radius of the most recent ball
+	private int radius = 4;
+        int shape_type_number = 0;
+        private Point2D last_location = null;
+        private java.util.List<Point2D> current_drawing_locations = new ArrayList();
+        private boolean drawing_in_progress = false;
+        private int drawing_number = 0;
+	private JSVGCanvas canvas;
+	private Document document;
+	private Element selected_shape;
+        Color color = new Color(0,0,0);
+        private int scl = 10;
+        private Point2D mouse_point = null;
+        private boolean moveable = false;
+        private Double shape_X;
+        private Double shape_Y;
+        private Double shape_scale;
+        private Point2D pressed_point = null;
+        private java.util.List<Element> location_list = new ArrayList();
+        private java.util.List<Element> location_coordinates_list = new ArrayList();
+        private Element axis_X;
+        private Element axis_Y;
+        private Point2D mouse_location;
+        private Point2D mouse_released;
+        boolean axises = false;
+        String natUri;
+
+	public SVGConjurer(Dimension dim) {
+		super("SVG Conjurer");
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                Cursor paint_cursor = new Cursor(Cursor.CROSSHAIR_CURSOR);
+		JPanel panel = new JPanel();
+		JPanel p = new JPanel();
+                try{
+                File nat_file = new File("FW.PNG");
+                natUri = nat_file.toURI().toString();
+                System.out.println(nat_file.toURI().toString());
+                }
+                catch(Exception e){
+                    System.out.println("file Exception");
+                }
+		canvas = new JSVGCanvas();
+		canvas.setMySize(dim);
+		canvas.addMouseListener(this);
+                canvas.addMouseMotionListener(this);
+		canvas.setDocumentState(JSVGCanvas.ALWAYS_DYNAMIC);
+                canvas.setCursor(paint_cursor);
+                canvas.setRecenterOnResize(true);
+
+		panel.setLayout(new BorderLayout());
+		panel.add("North", p);
+		panel.add("Center", canvas);
+                panel.setCursor(paint_cursor);
+		this.setContentPane(panel);
+		this.pack();
+		this.setBounds(150, 150, this.getWidth(), this.getHeight());
+
+		DOMImplementation dom = SVGDOMImplementation.getDOMImplementation();
+		document = dom.createDocument(svgNS, "svg", null);
+
+		// Finally, the document is associated with the canvas
+		canvas.setDocument(document);
+	}
+
+	public void mouseClicked(MouseEvent e) {
+            if(shape_type_number != 0){
+                last_location = e.getPoint();
+                current_drawing_locations.add(last_location);
+                drawLocationCoordinates();
+                drawLocation();
+                if(current_drawing_locations.size() == shape_type_number){
+                    drawSegment();
+                }
+            }
+
+	}
+
+	public void mousePressed(MouseEvent e) {
+            pressed_point = e.getPoint();
+        }
+
+	public void mouseReleased(MouseEvent e) {
+        moveable = false;
+        mouse_released = e.getPoint();
+//        locationSet();
+        }
+	public void mouseEntered(MouseEvent e) {}
+	public void mouseExited(MouseEvent e) {}
+        public void mouseDragged(MouseEvent e) {
+            if(!axises)drawAxises();
+            axisAdjust();
+        if (moveable){
+                mouse_point = e.getPoint();
+            shape_X = e.getX()- pressed_point.getX();
+            shape_Y = e.getY() - pressed_point.getY();
+            relocate();
+            }}
+        public void mouseMoved   (MouseEvent e) {
+            mouse_location = e.getPoint();
+            if(!axises)drawAxises();
+            axisAdjust();
+        }
+
+	// Changing the coordinates and the radius of the most recent ball
+	public void stateChanged(ChangeEvent e) {
+	}
+
+        private void drawImage(){
+            Runnable r = new Runnable() {
+			public void run() {
+				Element root = document.getDocumentElement();
+
+                                Element defs = document.createElementNS(svgNS, "defs");
+                                root.appendChild(defs);
+
+				Element my_image = document.createElementNS(svgNS, "image");
+                                my_image.setAttributeNS(XLINK_NAMESPACE_URI, "xlink:href", natUri);
+                                my_image.setAttributeNS(null, "id", "natasha_png");
+				my_image.setAttributeNS(null, "x", "0");
+                                my_image.setAttributeNS (null, "y", "0");
+				my_image.setAttributeNS(null, "width", "0.5in");
+				my_image.setAttributeNS(null, "height", "0.5in");
+
+                                Element pat = document.createElementNS(svgNS, "pattern");
+                                pat.setAttributeNS(null, "id", "fpatid");
+                                pat.setAttributeNS(null, "patternUnits", "userSpaceOnUse");
+                                pat.setAttributeNS(null, "width", "0.5in");
+                                pat.setAttributeNS(null, "height", "0.5in");
+                                pat.setAttributeNS(null, "x", "0.5in");
+                                pat.setAttributeNS(null, "y", "0.5in");
+
+                                pat.appendChild(my_image);
+				
+				defs.appendChild(pat);
+//                                location_list.add(location);
+			}
+		};
+		UpdateManager um = canvas.getUpdateManager();
+		um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+        private void drawAxises(){
+            axises = true;
+            Runnable r = new Runnable() {
+			public void run() {
+				Element root = document.getDocumentElement();
+				axis_X = document.createElementNS(svgNS, "line");
+                                axis_X.setAttributeNS(null, "id", "axis_X");
+				axis_X.setAttributeNS(null, "stroke", "green");
+				axis_X.setAttributeNS(null, "stroke-width", "1");
+                                axis_Y = document.createElementNS(svgNS, "line");
+                                axis_Y.setAttributeNS(null, "id", "axis_Y");
+				axis_Y.setAttributeNS(null, "stroke", "green");
+				axis_Y.setAttributeNS(null, "stroke-width", "1");
+				root.appendChild(axis_X);
+                                root.appendChild(axis_Y);
+			}
+		};
+		UpdateManager um = canvas.getUpdateManager();
+		um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+        private void drawLocationCoordinates(){
+            Runnable r = new Runnable() {
+			public void run() {
+				Element root = document.getDocumentElement();
+				Element coord_X = document.createElementNS(svgNS, "line");
+                                coord_X.setAttributeNS(null, "id", "axis_X");
+				coord_X.setAttributeNS(null, "stroke", "lightsteelblue");
+				coord_X.setAttributeNS(null, "stroke-width", "1");
+
+                                Element coord_Y = document.createElementNS(svgNS, "line");
+                                coord_Y.setAttributeNS(null, "id", "axis_Y");
+				coord_Y.setAttributeNS(null, "stroke", "lightsteelblue");
+				coord_Y.setAttributeNS(null, "stroke-width", "1");
+
+                                coord_X.setAttribute("x1","0");
+                coord_X.setAttribute("y1",""+last_location.getY());
+                coord_X.setAttribute("x2",""+getWidth());
+                coord_X.setAttribute("y2",""+last_location.getY());
+
+                coord_Y.setAttribute("x1",""+last_location.getX());
+                coord_Y.setAttribute("y1","0");
+                coord_Y.setAttribute("x2",""+last_location.getX());
+                coord_Y.setAttribute("y2",""+getHeight());
+				root.appendChild(coord_Y);
+                                root.appendChild(coord_X);
+                                location_coordinates_list.add(coord_Y);
+                                location_coordinates_list.add(coord_X);
+			}
+		};
+		UpdateManager um = canvas.getUpdateManager();
+		um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+        private void drawLocation(){
+            Runnable r = new Runnable() {
+			public void run() {
+				Element root = document.getDocumentElement();
+				Element location = document.createElementNS(svgNS, "circle");
+                                location.setAttributeNS(null, "id", "location");
+				location.setAttributeNS(null, "stroke", "darkslateblue");
+                                location.setAttributeNS (null, "fill", "lightsteelblue");
+				location.setAttributeNS(null, "stroke-width", "1");
+				location.setAttributeNS(null, "r", "" + radius);
+				location.setAttributeNS(null, "cx", "" + last_location.getX());
+				location.setAttributeNS(null, "cy", "" + last_location.getY());
+				root.appendChild(location);
+                                location_list.add(location);
+			}
+		};
+		UpdateManager um = canvas.getUpdateManager();
+		um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+        private void drawSegment(){
+            drawImage();
+            if(shape_type_number == 2) drawLine();
+            if(shape_type_number == 4) drawArc();
+        }
+
+        private void drawLine(){
+            Runnable r = new Runnable() {
+			public void run() {
+				Element root = document.getDocumentElement();
+                                Element current_drawing;
+                                if(drawing_in_progress){
+                                    current_drawing = document.getElementById("drawing_"+drawing_number);
+                                }
+                                else{
+                                    current_drawing = document.createElementNS(svgNS, "path");
+                                    current_drawing.setAttributeNS (null, "id", "drawing_"+drawing_number);
+                                    current_drawing.setAttributeNS(null, "pathLength", "100");
+                                    current_drawing.setAttributeNS (null, "stroke", "black");
+                                    current_drawing.setAttributeNS (null, "stroke-width", "1");
+                                    current_drawing.setAttributeNS(null, "fill", "none");
+                                    root.appendChild(current_drawing);
+                                    current_drawing.setAttributeNS(null, "d", "M "+current_drawing_locations.get(0).getX()+" "+current_drawing_locations.get(0).getY());
+                                }
+                                current_drawing.setAttributeNS(null, "d", current_drawing.getAttributeNS(null, "d")+" L "+current_drawing_locations.get(1).getX()+" "+current_drawing_locations.get(1).getY());
+                                current_drawing_locations.clear();
+                                current_drawing_locations.add(last_location);
+                                drawing_in_progress = true;
+			}
+		};
+
+		UpdateManager um = canvas.getUpdateManager();
+		um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+        private void drawArc(){
+            Runnable r = new Runnable() {
+			public void run() {
+				Element root = document.getDocumentElement();
+                                Element current_drawing;
+                                if(drawing_in_progress){
+                                    current_drawing = document.getElementById("drawing_"+drawing_number);
+                                }
+                                else{
+                                    current_drawing = document.createElementNS(svgNS, "path");
+                                    current_drawing.setAttributeNS (null, "id", "drawing_"+drawing_number);
+                                    current_drawing.setAttributeNS(null, "pathLength", "100");
+                                    current_drawing.setAttributeNS (null, "stroke", "black");
+                                    current_drawing.setAttributeNS (null, "stroke-width", "1");
+                                    current_drawing.setAttributeNS(null, "fill", "none");
+                                    root.appendChild(current_drawing);
+                                    current_drawing.setAttributeNS(null, "d", "M "+current_drawing_locations.get(0).getX()+" "+current_drawing_locations.get(0).getY());
+                                }
+                                current_drawing.setAttributeNS(null, "d", current_drawing.getAttributeNS(null, "d")+" C"+current_drawing_locations.get(1).getX()+" "+current_drawing_locations.get(1).getY()+" "+current_drawing_locations.get(2).getX()+" "+current_drawing_locations.get(2).getY()+" "+current_drawing_locations.get(3).getX()+" "+current_drawing_locations.get(3).getY());
+                                current_drawing_locations.clear();
+                                current_drawing_locations.add(last_location);
+                                drawing_in_progress = true;
+			}
+		};
+
+		UpdateManager um = canvas.getUpdateManager();
+		um.getUpdateRunnableQueue().invokeLater(r);
+                System.out.println("drawing number is "+drawing_number);
+        }
+
+        public void finishDrawing(){
+            Runnable r = new Runnable(){
+              public void run(){
+//                  Element natasha = document.getElementById("natasha_png");
+//                  System.out.println(natasha.getBaseURI());
+                  Element defs = document.createElementNS(svgNS, "defs");
+                  Element root = document.getDocumentElement();
+                                root.appendChild(defs);
+                                System.out.println("current uri "+natUri.toString());
+                                
+				Element my_image = document.createElementNS(svgNS, "image");
+                                my_image.setAttributeNS(XLINK_NAMESPACE_URI, "xlink:href", natUri);
+                                my_image.setAttributeNS(null, "id", "natasha_png");
+				my_image.setAttributeNS(null, "x", "0");
+                                my_image.setAttributeNS (null, "y", "0");
+				my_image.setAttributeNS(null, "width", "0.5in");
+				my_image.setAttributeNS(null, "height", "0.5in");
+
+                                Element pattern = document.createElementNS(svgNS, "pattern");
+                                pattern.setAttributeNS(null, "id", "pattern"+drawing_number);
+                                pattern.setAttributeNS(null, "patternUnits", "userSpaceOnUse");
+                                pattern.setAttributeNS(null, "width", "0.5in");
+                                pattern.setAttributeNS(null, "height", "0.5in");
+                                pattern.setAttributeNS(null, "x", "0.5in");
+                                pattern.setAttributeNS(null, "y", "0.5in");
+
+                                pattern.appendChild(my_image);
+
+				defs.appendChild(pattern);
+                  Element current_drawing = document.getElementById("drawing_"+drawing_number);
+                  current_drawing.setAttributeNS(null, "d", current_drawing.getAttributeNS(null, "d")+" Z");
+//                  current_drawing.setAttribute("fill", "rgb("+color.getRed()+","+color.getGreen()+","+color.getBlue()+")");
+                  //current_drawing.setAttribute("fill", "url(#pattern"+drawing_number+")");
+
+                  try{
+                      java.awt.Shape s = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(current_drawing.getAttributeNS(null,"d")), new GeneralPath().WIND_EVEN_ODD);
+                      PathIterator pi = s.getPathIterator(null);
+
+                      float[] coords = new float[6];
+                      while (!pi.isDone()) {
+                          int segment = pi.currentSegment(coords);
+                          if (segment == PathIterator.SEG_MOVETO) {
+                              System.out.println("Move segment");
+                              System.out.println();
+                          }
+                          else if (segment == PathIterator.SEG_CLOSE) {System.out.println("Close segment");}
+                          else if (segment == PathIterator.SEG_LINETO) {System.out.println("Line segment");}
+                          else if (segment == PathIterator.SEG_QUADTO) {}
+                          else if (segment == PathIterator.SEG_CUBICTO) {System.out.println("Curve segment");}
+                          pi.next();
+                          
+                      }
+
+                      
+                  }
+                  catch(Exception E){
+                      System.out.println("Shape problem");
+                  }
+                  AffineTransform at = new AffineTransform();
+            at.setToScale(1.5,1.5);
+//            canvas.setRenderingTransform(at);
+                  registerListeners(current_drawing);
+                  System.out.println(current_drawing.getAttribute("d"));
+                  drawing_number++;
+              }
+            };
+            Element root = document.getDocumentElement();
+            for(int i = 0; i < location_list.size(); i++){
+                root.removeChild(location_list.get(i));
+            }
+
+            for(int i = 0; i < location_coordinates_list.size(); i++){
+                root.removeChild(location_coordinates_list.get(i));
+            }
+            location_list.clear();
+            location_coordinates_list.clear();
+
+            UpdateManager um = canvas.getUpdateManager();
+	    um.getUpdateRunnableQueue().invokeLater(r);
+            drawing_in_progress = false;
+            current_drawing_locations.clear();
+            last_location = null;
+            
+        }
+
+        public JSVGCanvas getBoard(){
+        return canvas;
+    }
+
+        public void registerListeners(Element element){
+        EventTarget t1 = (EventTarget) document.getElementById (element.getAttribute("id"));
+        t1.addEventListener ("mouseover", new OnMouseOverCircleAction (), false);
+        t1.addEventListener ("mouseout", new mouseOut (), false);
+        t1.addEventListener ("click", new OnClickAction (), false);
+        t1.addEventListener ("mousedown", new OnMouseDownAction (), false);
+        t1.addEventListener ("mouseup", new OnMouseUpAction (), false);
+        t1.addEventListener ("mousemove", new OnMouseMoveAction (), false);
+    }
+
+        public class OnMouseOverCircleAction implements EventListener {
+     public void handleEvent (Event evt) {
+         EventTarget tt = evt.getTarget();
+         Element e1 = (Element)tt;
+         e1.setAttribute ("stroke", "yellow");
+         e1.setAttributeNS (null, "stroke-width", "5");
+//         System.out.println("Path Length of this element is "+e1.getAttribute("pathLength"));
+         e1.setAttributeNS(null, "pathLength", "200");
+        }
+      }
+
+    public class mouseOut implements EventListener {
+     public void handleEvent (Event evt) {
+         EventTarget tt = evt.getTarget();
+         Element e1 = (Element)tt;
+         e1.setAttribute ("stroke", "black");
+         e1.setAttributeNS (null, "stroke-width", "1");
+        }
+      }
+
+    public class OnMouseDownAction implements EventListener {
+     public void handleEvent (Event evt) {
+         EventTarget tt = evt.getTarget();
+         Element e1 = (Element)tt;
+         selected_shape = e1;
+         moveable = true;
+        }
+      }
+
+    public class OnMouseUpAction implements EventListener {
+     public void handleEvent (Event evt) {
+         EventTarget tt = evt.getTarget();
+         Element e1 = (Element)tt;
+         moveable = false;
+        }
+      }
+
+    public class OnMouseMoveAction implements EventListener {
+     public void handleEvent (Event evt) {
+         EventTarget tt = evt.getTarget();
+         Element e1 = (Element)tt;
+//         if(moveable) resizer();
+        }
+      }
+
+    public class OnClickAction implements EventListener {
+     public void handleEvent (Event evt) {
+         EventTarget tt = evt.getTarget();
+         Element e1 = (Element)tt;
+         selected_shape = e1;
+         Element root = document.getDocumentElement();
+         root.removeChild(e1);
+         root.appendChild(e1);
+        }
+      }
+    public void relocator(){
+        relocate();
+    }
+
+    public void relocator(int level){
+        scl = (level-50);
+        relocate();
+    }
+
+
+    public void relocate(){
+        Runnable r = new Runnable(){
+            public void run(){
+                selected_shape.setAttribute("transform", "translate("+shape_X+" "+shape_Y+")");
+            }
+        };
+        UpdateManager um = canvas.getUpdateManager();
+	um.getUpdateRunnableQueue().invokeLater(r);
+    }
+
+    public void resizer(int scale){
+        shape_scale = 50.0/(50+(50-scale));
+        resize();
+    }
+
+    public void resize(){
+        Runnable r = new Runnable(){
+            public void run(){
+                selected_shape.setAttribute("transform", "scale("+shape_scale+")");
+            }
+        };
+        UpdateManager um = canvas.getUpdateManager();
+	um.getUpdateRunnableQueue().invokeLater(r);
+    }
+
+    public void axisAdjust(){
+        Runnable r = new Runnable(){
+            public void run(){
+                axis_X.setAttribute("x1","0");
+                axis_X.setAttribute("y1",""+mouse_location.getY());
+                axis_X.setAttribute("x2",""+getWidth());
+                axis_X.setAttribute("y2",""+mouse_location.getY());
+
+                axis_Y.setAttribute("x1",""+mouse_location.getX());
+                axis_Y.setAttribute("y1","0");
+                axis_Y.setAttribute("x2",""+mouse_location.getX());
+                axis_Y.setAttribute("y2",""+getHeight());
+            }
+        };
+        UpdateManager um = canvas.getUpdateManager();
+	um.getUpdateRunnableQueue().invokeLater(r);
+    }
+}

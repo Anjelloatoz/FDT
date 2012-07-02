@@ -1,0 +1,1264 @@
+package Design_tool_prototype1;
+
+import java.awt.event.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.geom.Point2D;
+import java.util.*;
+
+import java.awt.*;
+
+import org.w3c.dom.events.Event;
+import org.w3c.dom.events.EventListener;
+import org.w3c.dom.events.EventTarget;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.*;
+//import java.awt.geom.CubicCurve2D.*;
+
+import org.apache.batik.bridge.UpdateManager;
+import org.apache.batik.dom.svg.SVGDOMImplementation;
+import org.apache.batik.swing.JSVGCanvas;
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import java.io.File;
+import java.awt.geom.AffineTransform;
+import java.io.StringReader;
+
+
+public class SVGConjurer extends JFrame implements ChangeListener, MouseListener, MouseMotionListener {
+	static final long serialVersionUID = 333333;
+	// Namespace string, to be used throughout the class
+	private final String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
+        static final String XLINK_NAMESPACE_URI = "http://www.w3.org/1999/xlink";
+
+	// Center coordinates and radius of the most recent ball
+	private int radius = 4;
+        int shape_type_number = 0;
+        private Point2D last_location = null;
+        private java.util.List<Point2D> current_drawing_locations = new ArrayList();
+        private java.util.List<Point2D> whole_path_locations_list = new ArrayList();
+        private boolean drawing_in_progress = false;
+        private int drawing_number = 0;
+	private JSVGCanvas canvas;
+	private Document document;
+	private Element selected_shape;
+        Color color = new Color(0,0,0);
+        private int scl = 10;
+        private Point2D mouse_point = null;
+        private boolean moveable = false;
+        private Double shape_X;
+        private Double shape_Y;
+        private Double shape_scale;
+        private Point2D pressed_point = null;
+        private java.util.List<Element> location_list = new ArrayList();
+        private java.util.List<Element> location_coordinates_list = new ArrayList();
+        private Element axis_X;
+        private Element axis_Y;
+        private Point2D mouse_location;
+        private Point2D mouse_released;
+        boolean axises = false;
+        String natUri;
+
+	public SVGConjurer(Dimension dim) {
+		super("SVG Conjurer");
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                Cursor paint_cursor = new Cursor(Cursor.CROSSHAIR_CURSOR);
+		JPanel panel = new JPanel();
+		JPanel p = new JPanel();
+                try{
+                File nat_file = new File("FW.PNG");
+                natUri = nat_file.toURI().toString();
+//                System.out.println(nat_file.toURI().toString());
+                }
+                catch(Exception e){
+                    System.out.println("file Exception");
+                }
+		canvas = new JSVGCanvas();
+		canvas.setMySize(dim);
+		canvas.addMouseListener(this);
+                canvas.addMouseMotionListener(this);
+		canvas.setDocumentState(JSVGCanvas.ALWAYS_DYNAMIC);
+                canvas.setCursor(paint_cursor);
+                canvas.setRecenterOnResize(true);
+
+		panel.setLayout(new BorderLayout());
+		panel.add("North", p);
+		panel.add("Center", canvas);
+                panel.setCursor(paint_cursor);
+		this.setContentPane(panel);
+		this.pack();
+		this.setBounds(150, 150, this.getWidth(), this.getHeight());
+
+		DOMImplementation dom = SVGDOMImplementation.getDOMImplementation();
+		document = dom.createDocument(svgNS, "svg", null);
+
+		// Finally, the document is associated with the canvas
+		canvas.setDocument(document);
+	}
+
+	public void mouseClicked(MouseEvent e) {
+            if(shape_type_number != 0){
+                last_location = e.getPoint();
+                current_drawing_locations.add(last_location);
+                whole_path_locations_list.add(last_location);
+                drawLocationCoordinates();
+                drawLocation();
+                if(current_drawing_locations.size() == shape_type_number){
+                    drawSegment();
+                }
+            }
+	}
+
+	public void mousePressed(MouseEvent e) {
+            pressed_point = e.getPoint();
+        }
+
+	public void mouseReleased(MouseEvent e) {
+        moveable = false;
+        mouse_released = e.getPoint();
+//        locationSet();
+        }
+	public void mouseEntered(MouseEvent e) {}
+	public void mouseExited(MouseEvent e) {}
+        public void mouseDragged(MouseEvent e) {
+            if(!axises)drawAxises();
+            axisAdjust();
+        if (moveable){
+                mouse_point = e.getPoint();
+            shape_X = e.getX()- pressed_point.getX();
+            shape_Y = e.getY() - pressed_point.getY();
+            relocate();
+            }}
+        public void mouseMoved   (MouseEvent e) {
+            mouse_location = e.getPoint();
+            if(!axises)drawAxises();
+            axisAdjust();
+        }
+
+	// Changing the coordinates and the radius of the most recent ball
+	public void stateChanged(ChangeEvent e) {
+	}
+
+        private void drawImage(){
+            Runnable r = new Runnable() {
+			public void run() {
+				Element root = document.getDocumentElement();
+
+                                Element defs = document.createElementNS(svgNS, "defs");
+                                root.appendChild(defs);
+
+				Element my_image = document.createElementNS(svgNS, "image");
+                                my_image.setAttributeNS(XLINK_NAMESPACE_URI, "xlink:href", natUri);
+                                my_image.setAttributeNS(null, "id", "natasha_png");
+				my_image.setAttributeNS(null, "x", "0");
+                                my_image.setAttributeNS (null, "y", "0");
+				my_image.setAttributeNS(null, "width", "0.5in");
+				my_image.setAttributeNS(null, "height", "0.5in");
+
+                                Element pat = document.createElementNS(svgNS, "pattern");
+                                pat.setAttributeNS(null, "id", "fpatid");
+                                pat.setAttributeNS(null, "patternUnits", "userSpaceOnUse");
+                                pat.setAttributeNS(null, "width", "0.5in");
+                                pat.setAttributeNS(null, "height", "0.5in");
+                                pat.setAttributeNS(null, "x", "0.5in");
+                                pat.setAttributeNS(null, "y", "0.5in");
+
+                                pat.appendChild(my_image);
+				
+				defs.appendChild(pat);
+//                                location_list.add(location);
+			}
+		};
+		UpdateManager um = canvas.getUpdateManager();
+		um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+        private void drawAxises(){
+            axises = true;
+            Runnable r = new Runnable() {
+			public void run() {
+				Element root = document.getDocumentElement();
+				axis_X = document.createElementNS(svgNS, "line");
+                                axis_X.setAttributeNS(null, "id", "axis_X");
+				axis_X.setAttributeNS(null, "stroke", "green");
+				axis_X.setAttributeNS(null, "stroke-width", "1");
+                                axis_Y = document.createElementNS(svgNS, "line");
+                                axis_Y.setAttributeNS(null, "id", "axis_Y");
+				axis_Y.setAttributeNS(null, "stroke", "green");
+				axis_Y.setAttributeNS(null, "stroke-width", "1");
+				root.appendChild(axis_X);
+                                root.appendChild(axis_Y);
+			}
+		};
+		UpdateManager um = canvas.getUpdateManager();
+		um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+        private void drawLocationCoordinates(){
+            Runnable r = new Runnable() {
+			public void run() {
+				Element root = document.getDocumentElement();
+				Element coord_X = document.createElementNS(svgNS, "line");
+                                coord_X.setAttributeNS(null, "id", "axis_X");
+				coord_X.setAttributeNS(null, "stroke", "lightsteelblue");
+				coord_X.setAttributeNS(null, "stroke-width", "1");
+
+                                Element coord_Y = document.createElementNS(svgNS, "line");
+                                coord_Y.setAttributeNS(null, "id", "axis_Y");
+				coord_Y.setAttributeNS(null, "stroke", "lightsteelblue");
+				coord_Y.setAttributeNS(null, "stroke-width", "1");
+
+                                coord_X.setAttribute("x1","0");
+                coord_X.setAttribute("y1",""+last_location.getY());
+                coord_X.setAttribute("x2",""+getWidth());
+                coord_X.setAttribute("y2",""+last_location.getY());
+
+                coord_Y.setAttribute("x1",""+last_location.getX());
+                coord_Y.setAttribute("y1","0");
+                coord_Y.setAttribute("x2",""+last_location.getX());
+                coord_Y.setAttribute("y2",""+getHeight());
+				root.appendChild(coord_Y);
+                                root.appendChild(coord_X);
+                                location_coordinates_list.add(coord_Y);
+                                location_coordinates_list.add(coord_X);
+			}
+		};
+		UpdateManager um = canvas.getUpdateManager();
+		um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+        private void drawLocation(){
+            Runnable r = new Runnable() {
+			public void run() {
+				Element root = document.getDocumentElement();
+				Element location = document.createElementNS(svgNS, "circle");
+                                location.setAttributeNS(null, "id", "location");
+				location.setAttributeNS(null, "stroke", "darkslateblue");
+                                location.setAttributeNS (null, "fill", "lightsteelblue");
+				location.setAttributeNS(null, "stroke-width", "1");
+				location.setAttributeNS(null, "r", "" + radius);
+				location.setAttributeNS(null, "cx", "" + last_location.getX());
+				location.setAttributeNS(null, "cy", "" + last_location.getY());
+				root.appendChild(location);
+                                location_list.add(location);
+			}
+		};
+		UpdateManager um = canvas.getUpdateManager();
+		um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+        private void drawSegment(){
+            drawImage();
+            if(shape_type_number == 2) drawLine();
+            if(shape_type_number == 4) drawArc();
+        }
+
+        private void drawLine(){
+            Runnable r = new Runnable() {
+			public void run() {
+				Element root = document.getDocumentElement();
+                                Element current_drawing;
+                                if(drawing_in_progress){
+                                    current_drawing = document.getElementById("drawing_"+drawing_number);
+                                }
+                                else{
+                                    current_drawing = document.createElementNS(svgNS, "path");
+                                    current_drawing.setAttributeNS (null, "id", "drawing_"+drawing_number);
+                                    current_drawing.setAttributeNS(null, "pathLength", "100");
+                                    current_drawing.setAttributeNS (null, "stroke", "black");
+                                    current_drawing.setAttributeNS (null, "stroke-width", "1");
+                                    current_drawing.setAttributeNS(null, "fill", "none");
+                                    root.appendChild(current_drawing);
+                                    current_drawing.setAttributeNS(null, "d", "M "+current_drawing_locations.get(0).getX()+" "+current_drawing_locations.get(0).getY());
+                                }
+                                current_drawing.setAttributeNS(null, "d", current_drawing.getAttributeNS(null, "d")+" L "+current_drawing_locations.get(1).getX()+" "+current_drawing_locations.get(1).getY());
+                                current_drawing_locations.clear();
+                                current_drawing_locations.add(last_location);
+                                drawing_in_progress = true;
+			}
+		};
+
+		UpdateManager um = canvas.getUpdateManager();
+		um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+        private void drawArc(){
+            Runnable r = new Runnable() {
+			public void run() {
+				Element root = document.getDocumentElement();
+                                Element current_drawing;
+                                if(drawing_in_progress){
+                                    current_drawing = document.getElementById("drawing_"+drawing_number);
+                                }
+                                else{
+                                    current_drawing = document.createElementNS(svgNS, "path");
+                                    current_drawing.setAttributeNS (null, "id", "drawing_"+drawing_number);
+                                    current_drawing.setAttributeNS(null, "pathLength", "100");
+                                    current_drawing.setAttributeNS (null, "stroke", "black");
+                                    current_drawing.setAttributeNS (null, "stroke-width", "1");
+                                    current_drawing.setAttributeNS(null, "fill", "none");
+                                    root.appendChild(current_drawing);
+                                    current_drawing.setAttributeNS(null, "d", "M "+current_drawing_locations.get(0).getX()+" "+current_drawing_locations.get(0).getY());
+                                }
+                                current_drawing.setAttributeNS(null, "d", current_drawing.getAttributeNS(null, "d")+" C"+current_drawing_locations.get(1).getX()+" "+current_drawing_locations.get(1).getY()+" "+current_drawing_locations.get(2).getX()+" "+current_drawing_locations.get(2).getY()+" "+current_drawing_locations.get(3).getX()+" "+current_drawing_locations.get(3).getY());
+                                current_drawing_locations.clear();
+                                current_drawing_locations.add(last_location);
+                                drawing_in_progress = true;
+			}
+		};
+
+		UpdateManager um = canvas.getUpdateManager();
+		um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+        public void finishDrawing(){
+            Runnable r = new Runnable(){
+              public void run(){
+                  Element defs = document.createElementNS(svgNS, "defs");
+                  Element root = document.getDocumentElement();
+                                root.appendChild(defs);
+                                
+				Element my_image = document.createElementNS(svgNS, "image");
+                                my_image.setAttributeNS(XLINK_NAMESPACE_URI, "xlink:href", natUri);
+                                my_image.setAttributeNS(null, "id", "natasha_png");
+				my_image.setAttributeNS(null, "x", "0");
+                                my_image.setAttributeNS (null, "y", "0");
+				my_image.setAttributeNS(null, "width", "0.5in");
+				my_image.setAttributeNS(null, "height", "0.5in");
+
+                                Element pattern = document.createElementNS(svgNS, "pattern");
+                                pattern.setAttributeNS(null, "id", "pattern"+drawing_number);
+                                pattern.setAttributeNS(null, "patternUnits", "userSpaceOnUse");
+                                pattern.setAttributeNS(null, "width", "0.5in");
+                                pattern.setAttributeNS(null, "height", "0.5in");
+                                pattern.setAttributeNS(null, "x", "0.5in");
+                                pattern.setAttributeNS(null, "y", "0.5in");
+
+                                pattern.appendChild(my_image);
+
+				defs.appendChild(pattern);
+                  Element current_drawing = document.getElementById("drawing_"+drawing_number);
+                  current_drawing.setAttributeNS(null, "d", current_drawing.getAttributeNS(null, "d")+" Z");
+//                  current_drawing.setAttribute("fill", "rgb("+color.getRed()+","+color.getGreen()+","+color.getBlue()+")");
+                  //current_drawing.setAttribute("fill", "url(#pattern"+drawing_number+")");
+
+                  AffineTransform at = new AffineTransform();
+            at.setToScale(1.5,1.5);
+//            canvas.setRenderingTransform(at);
+                  registerListeners(current_drawing);
+                  System.out.println(current_drawing.getAttribute("d"));
+                  drawing_number++;
+              }
+            };
+            Element root = document.getDocumentElement();
+            for(int i = 0; i < location_list.size(); i++){
+                root.removeChild(location_list.get(i));
+            }
+
+            for(int i = 0; i < location_coordinates_list.size(); i++){
+                root.removeChild(location_coordinates_list.get(i));
+            }
+            location_list.clear();
+            location_coordinates_list.clear();
+
+            UpdateManager um = canvas.getUpdateManager();
+	    um.getUpdateRunnableQueue().invokeLater(r);
+            drawing_in_progress = false;
+            current_drawing_locations.clear();
+            whole_path_locations_list.clear();
+            last_location = null;
+            
+        }
+
+/*        public void patternSplitter(final Element element_to_be_split, final Element split_path){
+            Runnable r = new Runnable(){
+                public void run(){
+                    java.awt.Shape shape_to_be_split = null;
+                    java.awt.Shape split_shape = null;
+                    try{
+                        shape_to_be_split = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(element_to_be_split.getAttributeNS(null,"d")), new GeneralPath().WIND_EVEN_ODD);
+                        split_shape = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(split_path.getAttributeNS(null,"d")), new GeneralPath().WIND_EVEN_ODD);
+                    }
+                    catch(Exception ex1){
+                        System.out.println("patternSplitter element_to_be_split to shape_to_be_split conversion error: "+ex1);
+                    }
+
+                    java.util.List<Point2D> split_shape_points = new ArrayList();
+                    PathIterator split_shape_iterator = split_shape.getPathIterator(null);
+                    double[] split_shape_coordinates = new double[6];
+                    while(!split_shape_iterator.isDone()){
+                        int segment = split_shape_iterator.currentSegment(split_shape_coordinates);
+                        if(segment == split_shape_iterator.SEG_MOVETO)split_shape_points.add(new Point2D.Double(split_shape_coordinates[0], split_shape_coordinates[1]));
+                        if(segment == split_shape_iterator.SEG_LINETO)split_shape_points.add(new Point2D.Double(split_shape_coordinates[0], split_shape_coordinates[1]));
+                        if(segment == split_shape_iterator.SEG_CUBICTO){
+                            split_shape_points.add(new Point2D.Double(split_shape_coordinates[0], split_shape_coordinates[1]));
+                            split_shape_points.add(new Point2D.Double(split_shape_coordinates[2], split_shape_coordinates[3]));
+                            split_shape_points.add(new Point2D.Double(split_shape_coordinates[4], split_shape_coordinates[5]));
+                        }
+                        split_shape_iterator.next();
+                    }
+                    Point2D first_split_point = split_shape_points.get(0);
+                    Point2D last_split_point = split_shape_points.get(split_shape_points.size()-1);
+                    boolean all_points_within_bounds = true;
+                    for(int i = 0; i < split_shape_points.size(); i++){
+                        if(!shape_to_be_split.contains(split_shape_points.get(i))){
+                            all_points_within_bounds = false;
+                        }
+                    }
+
+                    if(all_points_within_bounds){
+                        PathIterator shape_to_be_split_iterator = shape_to_be_split.getPathIterator(null);
+                        double[] shape_to_be_split_coordinates = new double[6];
+
+                        while(!shape_to_be_split_iterator.isDone()){
+                            Point2D last_point;
+                            int segment = shape_to_be_split_iterator.currentSegment(split_shape_coordinates);
+                            if(segment == shape_to_be_split_iterator.SEG_MOVETO){
+                                last_point = new Point2D.Double(shape_to_be_split_coordinates[0], shape_to_be_split_coordinates[1]);
+                            }
+                            if(segment == shape_to_be_split_iterator.SEG_LINETO){
+                                ;
+                            }
+                            if(segment == shape_to_be_split_iterator.SEG_CUBICTO);
+                            shape_to_be_split_iterator.next();
+                        }
+                    }
+
+                    else{
+                        System.out.println("One or more coordinates of the split path lies out of the pattern bounds.");
+                    }
+                }
+            };
+        }
+
+        public boolean lineSplitter(Line2D original_line, Point2D break_point, double[] left_line, double[] right_line){
+            PathIterator line_iterator = original_line.getPathIterator(null, 0.01);
+            double[] line_segment_coords = new double[2];
+            Point2D leading_point = null;
+            double distance = 1.0;
+            boolean result = false;
+            loop: while(!line_iterator.isDone()){
+                int segment = line_iterator.currentSegment(line_segment_coords);
+                if(segment == line_iterator.SEG_MOVETO){
+                    leading_point = new Point2D.Double(line_segment_coords[0], line_segment_coords[1]);
+                }
+                if(segment == line_iterator.SEG_LINETO){
+//                    double distance = break_point.distance(new Point2D.Double((leading_point.getX()+line_segment_coords[0])/2, (leading_point.getY()+line_segment_coords[1])/2));
+                    if (distance > break_point.distance(new Point2D.Double((leading_point.getX()+line_segment_coords[0])/2, (leading_point.getY()+line_segment_coords[1])/2))){
+                        distance = break_point.distance(new Point2D.Double((leading_point.getX()+line_segment_coords[0])/2, (leading_point.getY()+line_segment_coords[1])/2));
+                        left_line[0] = leading_point.getX();
+                        left_line[1] = leading_point.getY();
+                        left_line[2] = break_point.getX();
+                        left_line[3] = break_point.getY();
+
+                        right_line[0] = break_point.getX();
+                        right_line[1] = break_point.getY();
+                        right_line[2] = line_segment_coords[0];
+                        right_line[3] = line_segment_coords[1];
+                        result = true;
+                    }
+                }
+                line_iterator.next();
+            }
+            return result;
+        }
+*/
+
+/*        public void splitPattern(){
+
+            Runnable r = new Runnable(){
+                public void run(){
+                    int position = 0;
+                    int position2 = 0;
+                    double ps = 0;
+                    double ps2 = 0;
+                    try{
+                        String forward_path = "";
+                        String backward_path = "";
+                        Point2D begining_point =new Point2D.Double();
+                        Point2D finishing_point =new Point2D.Double();
+                    @SuppressWarnings("static-access")
+                      java.awt.Shape s = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(selected_shape.getAttributeNS(null,"d")), new GeneralPath().WIND_EVEN_ODD);
+                      PathIterator pi = s.getPathIterator(null);
+
+                      double last_X = 0;
+                      double last_Y = 0;
+                      double first_X = 0;
+                      double first_Y = 0;
+                      Point2D first_point = null;
+                      Point2D second_point = null;
+                      double[] coords = new double[6];
+                      int segment_count = 0;
+                      int location1 = 0;
+                      int location2 = 0;
+                      boolean clockwise = false;
+
+                      while (!pi.isDone()) {
+                          int segment = pi.currentSegment(coords);
+                          if (segment == PathIterator.SEG_MOVETO) {
+                              last_X = coords[0];
+                              last_Y = coords[1];
+                              first_X = coords[0];
+                              first_Y = coords[1];
+                          }
+                          else if (segment == PathIterator.SEG_CLOSE) {
+                              Line2D new_line = new Line2D.Double(last_X, last_Y, first_X, first_Y);
+                          }
+                          else if (segment == PathIterator.SEG_LINETO) {
+                              Line2D new_line = new Line2D.Double(last_X, last_Y, coords[0], coords[1]);
+                              if(new_line.ptLineDist(whole_path_locations_list.get(0).getX(), whole_path_locations_list.get(0).getY())<1.0){
+                                  first_point = new Point2D.Double(whole_path_locations_list.get(0).getX(), whole_path_locations_list.get(0).getY());
+                                  if(location1 == 0)
+                                  location1 = segment_count;
+                                  else location2 = segment_count;
+                                  clockwise = true;
+                              }
+
+                              if(new_line.ptLineDist(whole_path_locations_list.get(whole_path_locations_list.size()-1).getX(), whole_path_locations_list.get(whole_path_locations_list.size()-1).getY())<1.0){
+                                  second_point = new Point2D.Double(whole_path_locations_list.get(whole_path_locations_list.size()-1).getX(), whole_path_locations_list.get(whole_path_locations_list.size()-1).getY());
+                                  if(location1 == 0)
+                                  location1 = segment_count;
+                                  else location2 = segment_count;
+                                       Element tmp = document.getElementById("drawing_"+drawing_number);
+                                       System.out.println(tmp.getAttribute("d"));
+                                       String converted = "";
+                                       float[] coords2 = new float[6];
+
+                                       try{
+                                           java.awt.Shape inverted = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(tmp.getAttribute("d")), new GeneralPath().WIND_EVEN_ODD);
+                                           PathIterator pi2 = inverted.getPathIterator(null);
+                                           while (!pi2.isDone()) {
+                                               int segment2 = pi2.currentSegment(coords2);
+                                               if (segment2 == PathIterator.SEG_MOVETO) {
+                                                   converted = coords2[0]+" "+ coords2[1];
+                                                   forward_path = coords2[0]+" "+ coords2[1];
+                                                   backward_path = coords2[0]+" "+ coords2[1];
+                                                   begining_point = new Point2D.Double(coords2[0], coords2[1]);
+//                                                   System.out.println("M passed");
+                                               }
+
+                                               else if (segment2 == PathIterator.SEG_CLOSE) {}
+                                               else if (segment2 == PathIterator.SEG_LINETO) {
+                                                   converted = coords2[0]+" "+coords2[1]+" L "+converted;
+                                                   if(clockwise){
+                                                       forward_path = forward_path+" L "+coords2[0]+" "+coords2[1];
+                                                       backward_path = coords2[0]+" "+coords2[1]+" L "+backward_path;
+                                                       finishing_point = new Point2D.Double(coords2[0], coords2[1]);
+                                                   }
+                                                   else{
+                                                       forward_path = coords2[0]+" "+coords2[1]+" L "+forward_path;
+                                                       backward_path = backward_path+" L "+coords2[0]+" "+coords2[1];
+                                                       finishing_point = begining_point;
+                                                       begining_point = new Point2D.Double(coords2[0], coords2[1]);
+                                                   }
+//                                                   System.out.println("L passed");
+                                               }
+                                               else if (segment2 == PathIterator.SEG_CUBICTO) {
+                                                   System.out.println("Clockwise is "+clockwise);
+                                                   converted = coords2[4]+" "+coords2[5]+" C "+coords2[2]+" "+coords2[3]+" "+coords2[0]+" "+coords2[1]+" "+converted;
+                                                   if(clockwise){
+                                                       forward_path = forward_path+" C "+coords2[0]+" "+coords2[1]+" "+coords2[2]+" "+coords2[3]+" "+coords2[4]+" "+coords2[5];
+                                                       backward_path = coords2[4]+" "+coords2[5]+" C "+coords2[2]+" "+coords2[3]+" "+coords2[0]+" "+coords2[1]+" "+backward_path;
+                                                       finishing_point = new Point2D.Double(coords2[4], coords2[5]);
+                                                   }
+                                                   else{
+                                                       forward_path = coords2[4]+" "+coords2[5]+" C "+coords2[2]+" "+coords2[3]+" "+coords2[0]+" "+coords2[1]+" "+forward_path;
+                                                       backward_path = backward_path+" C "+coords2[0]+" "+coords2[1]+" "+coords2[2]+" "+coords2[3]+" "+coords2[4]+" "+coords2[5];
+                                                       finishing_point = begining_point;
+                                                       begining_point = new Point2D.Double(coords2[4], coords2[5]);
+                                                   }
+                                                   System.out.println("C passed");
+                                               }
+                                               pi2.next();
+                                               
+                                          }
+                                          System.out.println("Forward path is "+forward_path);
+                                          System.out.println("Backward path is "+backward_path);
+                                          System.out.println("Begining point is "+begining_point.getX()+","+begining_point.getY());
+                                          System.out.println("Finishing point is "+finishing_point.getX()+","+finishing_point.getY());
+//                                          System.out.println("Converted is: M"+converted);
+                                          tmp.setAttribute("d", "M "+converted);
+//                                          System.out.println("After the reversing, the path is "+tmp.getAttribute("d"));
+                                      }
+                                      catch(Exception e){
+                                          System.out.println("Converter error");
+                                      }
+                                 
+                              }
+
+                              last_X = coords[0];
+                              last_Y = coords[1];
+                          }
+                          else if (segment == PathIterator.SEG_QUADTO) {}
+                          else if (segment == PathIterator.SEG_CUBICTO) {
+
+                              CubicCurve2D curve = new CubicCurve2D.Double(last_X, last_Y, coords[0], coords[1], coords[2], coords[3], coords[4], coords[5]);
+                              PathIterator curve_iterator = curve.getPathIterator(null, 0.01);
+                              double[] curve_coords = new double[6];
+                              double distance = 5.0;
+                              
+                              int curve_lines = 0;
+                              Point2D this_point;
+                              while(!curve_iterator.isDone()){
+                                  int curve_segment = curve_iterator.currentSegment(curve_coords);
+                                  if (curve_segment == PathIterator.SEG_LINETO){
+                                      this_point = new Point2D.Double(curve_coords[0], curve_coords[1]);
+                                      if(this_point.distance(whole_path_locations_list.get(0))<distance){
+                                          distance = this_point.distance(whole_path_locations_list.get(0));                                          
+                                          first_point = new Point2D.Double(whole_path_locations_list.get(0).getX(), whole_path_locations_list.get(0).getY());
+                                          if(location1 == 0){
+                                            location1 = segment_count;
+                                            position = curve_lines;
+                                          }
+                                          else{
+                                              location2 = segment_count;
+                                              position2 = curve_lines;
+                                          }
+                                          clockwise = true;
+                                      }
+
+                                      if(this_point.distance(whole_path_locations_list.get(whole_path_locations_list.size()-1))<1.0){
+                                          distance = this_point.distance(whole_path_locations_list.get(0));
+
+                                  second_point = new Point2D.Double(whole_path_locations_list.get(whole_path_locations_list.size()-1).getX(), whole_path_locations_list.get(whole_path_locations_list.size()-1).getY());
+                                  if(location1 == 0){
+                                  location1 = segment_count;
+                                  position = curve_lines;
+                                  }
+                                  else{
+                                      location2 = segment_count;
+                                      position2 = curve_lines;
+                                  }
+                                       Element tmp = document.getElementById("drawing_"+drawing_number);
+                                       System.out.println(tmp.getAttribute("d"));
+                                       String converted = "";
+                                       float[] coords2 = new float[6];
+
+                                       try{
+                                           java.awt.Shape inverted = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(tmp.getAttribute("d")), new GeneralPath().WIND_EVEN_ODD);
+                                           PathIterator pi2 = inverted.getPathIterator(null);
+                                           while (!pi2.isDone()) {
+                                               int segment2 = pi2.currentSegment(coords2);
+                                               if (segment2 == PathIterator.SEG_MOVETO) {
+                                                   converted = coords2[0]+" "+ coords2[1];
+                                                   forward_path = coords2[0]+" "+ coords2[1];
+                                                   backward_path = coords2[0]+" "+ coords2[1];
+                                                   begining_point = new Point2D.Double(coords2[0], coords2[1]);
+                                                   System.out.println("M passed");
+                                               }
+
+                                               else if (segment2 == PathIterator.SEG_CLOSE) {}
+                                               else if (segment2 == PathIterator.SEG_LINETO) {
+                                                   converted = coords2[0]+" "+coords2[1]+" L "+converted;
+                                                   if(clockwise){
+                                                       forward_path = forward_path+" L "+coords2[0]+" "+coords2[1];
+                                                       backward_path = coords2[0]+" "+coords2[1]+" L "+backward_path;
+                                                       finishing_point = new Point2D.Double(coords2[0], coords2[1]);
+                                                   }
+                                                   else{
+                                                       forward_path = coords2[0]+" "+coords2[1]+" L "+forward_path;
+                                                       backward_path = backward_path+" L "+coords2[0]+" "+coords2[1];
+                                                       finishing_point = begining_point;
+                                                       begining_point = new Point2D.Double(coords2[0], coords2[1]);
+                                                   }
+                                                   System.out.println("L passed");
+                                               }
+                                               else if (segment2 == PathIterator.SEG_CUBICTO) {
+                                                   converted = coords2[4]+" "+coords2[5]+" C "+coords2[2]+" "+coords2[3]+" "+coords2[0]+" "+coords2[1]+" "+converted;
+                                                   if(clockwise){
+                                                       forward_path = forward_path+" C "+coords2[0]+" "+coords2[1]+" "+coords2[2]+" "+coords2[3]+" "+coords2[4]+" "+coords2[5];
+                                                       backward_path = coords2[4]+" "+coords2[5]+" C "+coords2[2]+" "+coords2[3]+" "+coords2[0]+" "+coords2[1]+" "+backward_path;
+                                                       finishing_point = new Point2D.Double(coords2[4], coords2[5]);
+                                                   }
+                                                   else{
+                                                       forward_path = coords2[4]+" "+coords2[5]+" C "+coords2[2]+" "+coords2[3]+" "+coords2[0]+" "+coords2[1]+" "+forward_path;
+                                                       backward_path = backward_path+" C "+coords2[0]+" "+coords2[1]+" "+coords2[2]+" "+coords2[3]+" "+coords2[4]+" "+coords2[5];
+                                                       finishing_point = begining_point;
+                                                       begining_point = new Point2D.Double(coords2[4], coords2[5]);
+                                                   }
+                                                   System.out.println("C passed");
+                                               }
+                                               pi2.next();
+                                          }
+                                          System.out.println("Forward path is "+forward_path);
+                                          System.out.println("Backward path is "+backward_path);
+                                          System.out.println("Begining point is "+begining_point.getX()+","+begining_point.getY());
+                                          System.out.println("Finishing point is "+finishing_point.getX()+","+finishing_point.getY());
+//                                          System.out.println("Converted is: M"+converted);
+                                          tmp.setAttribute("d", "M "+converted);
+                                          System.out.println("After the reversing, the path is "+tmp.getAttribute("d"));
+                                      }
+                                      catch(Exception e){
+                                          System.out.println("Converter error");
+                                      }
+                                  }
+
+                                  }
+                                  curve_lines++;
+                                  curve_iterator.next();
+                              }
+                              System.out.println("At the end position id "+position);
+                              System.out.println("At the end curve lines is "+curve_lines);
+                              double pos = (double)position;
+                              double cv_lines = (double)curve_lines;
+                              ps = (pos/cv_lines)*100;
+                              if(position2!=0){
+                                  pos = (double)position2;
+                                  cv_lines = (double)curve_lines;
+                                  ps2 = (pos/cv_lines)*100;
+                              }
+                              System.out.println("Position is "+ps);
+                              System.out.println("The number of segments in the Curve are "+curve_lines);
+                              distance = 5.0;
+
+                              last_X = coords[4];
+                              last_Y = coords[5];
+                          }
+                          pi.next();
+                          segment_count++;
+                      }
+                      System.out.println("########"+" first_point is "+first_point+" ########## Second point is "+second_point);
+
+                      if(first_point!=null && second_point!=null){
+                          String element1 = "";
+                          String element2 = "";
+
+                      pi = s.getPathIterator(null);
+                      segment_count = 0;
+                      boolean first_half = true;
+                      Point2D last_point = null;
+                      while (!pi.isDone()) {
+                          int segment = pi.currentSegment(coords);
+                          if (segment == PathIterator.SEG_MOVETO) {
+                              element1 = "M "+coords[0]+" "+coords[1];
+                              last_point = new Point2D.Double(coords[0], coords[1]);
+                          }
+                          else if (segment == PathIterator.SEG_CLOSE) {}
+                          else if (segment == PathIterator.SEG_LINETO) {
+                              if(first_half){
+                              if(location1==segment_count){
+                                  element1 = element1+" L "+forward_path;
+                                  element2 = "M "+begining_point.getX()+" "+begining_point.getY()+" L "+coords[0]+" "+coords[1];
+                                  first_half = false;
+                                  System.out.println("Line 760 element1: "+element1);
+                                  System.out.println("Line 761 element1: "+element2);
+                              }
+                              else if(location2==segment_count){
+                                  element1 = element1+" L "+backward_path;
+                                  element2 = "M "+finishing_point.getX()+" "+finishing_point.getY()+" L "+coords[0]+" "+coords[1];
+                                  first_half = false;
+                                  System.out.println("Line 767 element1: "+element1);
+                                  System.out.println("Line 768 element1: "+element2);
+                              }
+                              else{
+                                  element1 = element1+" L "+coords[0]+" "+coords[1];
+                                  System.out.println("Line 772 element1: "+element1);
+                                  System.out.println("Line 773 element1: "+element2);
+                              }
+                              }
+
+                              else{
+                                  if(location1==segment_count){
+                                      System.out.println("¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬¬");
+                                  element2 = element2+" L "+forward_path;
+                                  element2 = "M "+begining_point.getX()+" "+begining_point.getY()+" L "+coords[0]+" "+coords[1];
+                                  first_half = false;
+                                  System.out.println("Line 783 element1: "+element1);
+                                  System.out.println("Line 784 element1: "+element2);
+                              }
+                                  else if(location2 == segment_count){
+                                      element2 = element2+" L "+backward_path+" z";
+                                      element1 = element1+" L "+coords[0]+" "+coords[1];
+                                      first_half = true;
+                                      System.out.println("Line 790 element1: "+element1);
+                                  System.out.println("Line 791 element1: "+element2);
+                                  }
+                                  else{
+                                      element2 = element2+" L "+coords[0]+" "+coords[1];
+                                      System.out.println("Line 795 element1: "+element1);
+                                  System.out.println("Line 796 element1: "+element2);
+                                  }
+                              }
+                              last_point = new Point2D.Double(coords[0], coords[1]);
+                          }
+                          else if (segment == PathIterator.SEG_QUADTO) {}
+                          else if (segment == PathIterator.SEG_CUBICTO) {
+                              double[] source = {last_point.getX(), last_point.getY(), coords[0], coords[1], coords[2], coords[3], coords[4], coords[5]};
+                              double[] left_curve = new double[6];
+                              double[] right_curve = new double[6];
+                              
+
+                              position = 0;
+                              if(first_half){
+                                  if(location1 == segment_count){
+                                      System.out.println("Location1 in the curve "+segment_count);
+                                      CurveSplitter(source, ps, left_curve, right_curve);
+                                      element1 = element1 + " C "+left_curve[2]+" "+left_curve[3]+" "+left_curve[4]+" "+left_curve[5]+" "+forward_path;
+                                      element2 = "M "+begining_point.getX()+" "+begining_point.getY()+ " C "+right_curve[2]+" "+right_curve[3]+" "+right_curve[4]+" "+right_curve[5]+" "+coords[4]+" "+coords[5];
+                                      first_half = false;
+                                      System.out.println("Line 816 element1: "+element1);
+                                  System.out.println("Line 817 element1: "+element2);
+                                  }
+
+                                  else if(location2 == segment_count){
+                                      System.out.println("Location2 in the curve "+segment_count);
+                                      CurveSplitter(source, ps, left_curve, right_curve);
+                                      element1 = element1 + " C "+left_curve[0]+" "+left_curve[1]+" "+left_curve[2]+" "+left_curve[3]+" "+left_curve[4]+" "+left_curve[5]+" "+backward_path;
+                                      element2 = "M "+finishing_point.getX()+" "+finishing_point.getY()+ " C "+right_curve[0]+" "+right_curve[1]+" "+right_curve[2]+" "+right_curve[3]+" "+right_curve[4]+" "+right_curve[5];
+                                      first_half = false;
+                                      System.out.println("Line 826 element1: "+element1);
+                                  System.out.println("Line 827 element1: "+element2);
+                                  }
+                                  else
+                                  element1 = element1+" C "+coords[0]+" "+coords[1]+" "+coords[2]+" "+coords[3]+" "+coords[4]+" "+coords[5];
+                                  System.out.println("Line 831 element1: "+element1);
+                                  System.out.println("Line 832 element1: "+element2);
+                              }
+                              else{
+                                  if(location1 == segment_count){
+                                      element2 = element2 + " C "+left_curve[0]+" "+left_curve[1]+" "+left_curve[2]+" "+left_curve[3]+" "+left_curve[4]+" "+left_curve[5]+" "+forward_path;
+                                      System.out.println("Line 837 element1: "+element1);
+                                  System.out.println("Line 838 element1: "+element2);
+                                  }
+                                  else if(location2 == segment_count){
+                                      CurveSplitter(source, ps2, left_curve, right_curve);
+                                      element2 = element2+" C "+left_curve[0]+" "+left_curve[1]+" "+left_curve[2]+" "+left_curve[3]+" "+left_curve[4]+" "+left_curve[5]+" "+backward_path+" z";
+                                      element1 = element1+" C "+right_curve[0]+" "+right_curve[1]+" "+right_curve[2]+" "+right_curve[3]+" "+right_curve[4]+" "+right_curve[5];
+                                      first_half = true;
+                                      System.out.println("Line 845 element1: "+element1);
+                                  System.out.println("Line 846 element1: "+element2);
+                                  }
+                                  element2 = element2+" C "+coords[0]+" "+coords[1]+" "+coords[2]+" "+coords[3]+" "+coords[4]+" "+coords[5];
+                                  System.out.println("Line 849 element1: "+element1);
+                                  System.out.println("Line 850 element1: "+element2);
+                              }
+                          }
+                          pi.next();
+                          segment_count++;
+                      }
+                      System.out.println("First element: "+element1);
+                      System.out.println("Second element: "+element2);
+                      }
+                  }
+                  catch(Exception E){
+                      System.out.println("Shape problem at re-drawing section "+ E);
+                  }
+                }
+            };
+            UpdateManager um = canvas.getUpdateManager();
+	    um.getUpdateRunnableQueue().invokeLater(r);
+        }*/
+
+        public JSVGCanvas getBoard(){
+        return canvas;
+    }
+
+        public void testSplitter(){
+            Runnable r = new Runnable(){
+                public void run(){
+                    java.awt.Shape s = null;
+                    boolean splitable = true;
+                    Point2D split_path_begining = whole_path_locations_list.get(0);
+                    Point2D split_path_ending = whole_path_locations_list.get(whole_path_locations_list.size()-1);
+                    try{
+                        s = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(selected_shape.getAttributeNS(null,"d")), new GeneralPath().WIND_EVEN_ODD);
+                    }
+                    catch(Exception e){
+                        System.out.println("Exception caught at test Splitter");
+                    }
+
+                    for(int i = 1; i < whole_path_locations_list.size()-1; i++){
+                        if(!s.contains(whole_path_locations_list.get(i))){
+                            System.out.println("Atleast one of the split path coordinates are out of the shape boundaries.");
+                            splitable = false;
+                        }
+                    }
+                    if(splitable){
+                        boolean begining_point_on_line = false;
+                        boolean ending_point_on_line = false;
+                        String new_shape = "";
+                        Point2D last_point = null;
+                        while(!begining_point_on_line || !ending_point_on_line){
+                            double[] coords = new double[6];
+                            PathIterator pi = s.getPathIterator(null);
+
+                            while(!pi.isDone()){
+//                                System.out.println("In the path iterator while loop");
+                                int segment = pi.currentSegment(coords);
+                                if(segment == pi.SEG_MOVETO){
+                                    new_shape = "M "+coords[0]+" "+coords[1];
+                                    last_point = new Point2D.Double(coords[0], coords[1]);
+                                }
+                                else if(segment == pi.SEG_LINETO){
+                                    Line2D tmp_line = new Line2D.Double(last_point.getX(), last_point.getY(), coords[0], coords[1]);
+                                    if(tmp_line.ptLineDist(split_path_begining)<1.0){
+                                        new_shape = new_shape+" L "+split_path_begining.getX()+" "+split_path_begining.getY()+" L "+coords[0]+" "+coords[1];
+                                        begining_point_on_line = true;
+                                    }
+                                    else if(tmp_line.ptLineDist(split_path_ending)<1.0){
+                                        new_shape = new_shape+" L "+split_path_ending.getX()+" "+split_path_ending.getY()+" L "+coords[0]+" "+coords[1];
+                                        ending_point_on_line = true;
+                                    }
+                                    else new_shape = new_shape+" L "+coords[0]+" "+coords[1];
+                                    last_point = new Point2D.Double(coords[0], coords[1]);
+                                }
+                                else if(segment == pi.SEG_CUBICTO){
+                                    CubicCurve2D tmp_curve = new CubicCurve2D.Double(last_point.getX(), last_point.getY(), coords[0], coords[1], coords[2], coords[3], coords[4], coords[5]);
+                                    PathIterator curve_path_iterator = tmp_curve.getPathIterator(null, 0.01);
+                                    double[] curve_coords = new double[2];
+                                    double distance = 1.0;
+                                    int segment_counter = 0;
+                                    double percenter = 0;
+                                    Point2D break_point = null;
+                                    Point2D first_point = last_point;
+                                    boolean one_point_found = false;
+                                    while(!curve_path_iterator.isDone()){
+                                        int curve_segment = curve_path_iterator.currentSegment(curve_coords);
+                                        if(curve_segment == curve_path_iterator.SEG_MOVETO){
+                                            first_point = new Point2D.Double(curve_coords[0], curve_coords[1]);
+                                        }
+
+                                        if(curve_segment == curve_path_iterator.SEG_LINETO){
+                                            Line2D line_segment = new Line2D.Double(first_point.getX(), first_point.getY(), curve_coords[0], curve_coords[1]);
+                                            if((distance > line_segment.ptSegDist(split_path_begining))&& !begining_point_on_line && !one_point_found){
+                                                distance = line_segment.ptSegDist(split_path_begining);
+                                                percenter = segment_counter;
+                                                break_point = split_path_begining;
+                                                begining_point_on_line = true;
+                                                one_point_found = true;
+                                                System.out.println("begining point became true at segment "+segment_counter);
+                                            }
+//                                            System.out.println("The distance between the ending point and the curve is "+line_segment.ptLineDist(split_path_ending));
+                                            else if((distance > line_segment.ptLineDist(split_path_ending))&& !ending_point_on_line && !one_point_found){
+                                                distance = line_segment.ptLineDist(split_path_ending);
+                                                percenter = segment_counter;
+                                                break_point = split_path_ending;
+                                                ending_point_on_line = true;
+                                                one_point_found = true;
+                                                System.out.println("ending point became true at segment "+segment_counter);
+                                            }
+                                            first_point = new Point2D.Double(curve_coords[0], curve_coords[1]);
+                                        }
+                                        segment_counter++;
+                                        curve_path_iterator.next();
+                                    }
+                                    percenter = (percenter/segment_counter)*100;
+                                    one_point_found = false;
+
+                                    distance = 1.0;
+                                    System.out.println("******************************************");
+                                    System.out.println("*******My lovely Curve Coordinates*******");
+                                    System.out.println("------------------------------------------");
+                                    System.out.println("Last Point: "+last_point);
+                                    System.out.println("coords[0]: "+coords[0]);
+                                    System.out.println("coords[1]: "+coords[1]);
+                                    System.out.println("coords[2]: "+coords[2]);
+                                    System.out.println("coords[3]: "+coords[3]);
+                                    System.out.println("coords[4]: "+coords[4]);
+                                    System.out.println("coords[5]: "+coords[5]);
+                                    System.out.println("percenter: "+percenter);
+                                    Point2D A = new Point2D.Double(last_point.getX()+((coords[0]-last_point.getX())/100)*percenter, last_point.getY()+((coords[1]-last_point.getY())/100)*percenter);
+                                    Point2D B = new Point2D.Double(coords[0]+((coords[2]-coords[0])/100)*percenter, coords[1]+((coords[3]-coords[1])/100)*percenter);
+                                    Point2D C = new Point2D.Double(coords[2]+((coords[4]-coords[2])/100)*percenter, coords[3]+((coords[5]-coords[3])/100)*percenter);
+                                    Point2D M = new Point2D.Double(A.getX()+((B.getX()-A.getX())/100)*percenter, A.getY()+((B.getY()-A.getY())/100)*percenter);
+                                    Point2D N = new Point2D.Double(B.getX()+((C.getX()-B.getX())/100)*percenter, B.getY()+((C.getY()-B.getY())/100)*percenter);
+
+                                    if(break_point == split_path_begining){
+                                        System.out.println("Split path begining");
+                                        System.out.println(last_point.getX()+" "+last_point.getY()+" "+" C "+A.getX()+" "+A.getY()+" "+M.getX()+" "+M.getY()+" "+break_point.getX()+" "+break_point.getY());
+                                        System.out.println(break_point.getX()+" "+break_point.getY()+" "+" C "+N.getX()+" "+N.getY()+" "+C.getX()+" "+C.getY()+" "+coords[4]+" "+coords[5]);
+                                        new_shape = new_shape+" C "+A.getX()+" "+A.getY()+" "+M.getX()+" "+M.getY()+" "+break_point.getX()+" "+break_point.getY()+" C "+N.getX()+" "+N.getY()+" "+C.getX()+" "+C.getY()+" "+coords[4]+" "+coords[5];
+                                        System.out.println("NEW SHAPE IS "+new_shape);
+                                    }
+
+                                    else if(break_point == split_path_ending){
+                                        System.out.println("Split path ending");
+                                        System.out.println(last_point.getX()+" "+last_point.getY()+" "+" C "+A.getX()+" "+A.getY()+" "+M.getX()+" "+M.getY()+" "+break_point.getX()+" "+break_point.getY());
+                                        System.out.println(break_point.getX()+" "+break_point.getY()+" "+" C "+N.getX()+" "+N.getY()+" "+C.getX()+" "+C.getY()+" "+coords[4]+" "+coords[5]);
+                                        new_shape = new_shape+" C "+A.getX()+" "+A.getY()+" "+M.getX()+" "+M.getY()+" "+break_point.getX()+" "+break_point.getY()+" C "+N.getX()+" "+N.getY()+" "+C.getX()+" "+C.getY()+" "+coords[4]+" "+coords[5];
+                                        System.out.println("NEW SHAPE IS "+new_shape);
+                                    }
+                                    else new_shape = new_shape+" C "+coords[0]+" "+coords[1]+" "+coords[2]+" "+coords[3]+" "+coords[4]+" "+coords[5];
+                                    last_point = new Point2D.Double(coords[4], coords[5]);
+                                }
+                                pi.next();
+                            }
+                            System.out.println("At the end of the outer while NEW SHAPE IS "+new_shape);
+                            try{
+                                s = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(new_shape), new GeneralPath().WIND_EVEN_ODD);
+                            }
+                            catch(Exception e){
+                                System.out.println("Exception caught at test Splitter");
+                            }
+                        }
+                        String forward_path;
+                        String backward_path;
+
+                        Element tmp = document.getElementById("drawing_"+drawing_number);
+                        java.awt.Shape original_split_path = null;
+                        backward_path = "";
+                        try{
+                            original_split_path = org.apache.batik.parser.AWTPathProducer.createShape(new StringReader(tmp.getAttribute("d")), new GeneralPath().WIND_EVEN_ODD);
+                        }
+                        catch(Exception e){
+                            System.out.println("splitPathConverter Error");
+                        }
+                        forward_path = tmp.getAttribute("d");
+                        PathIterator pi = original_split_path.getPathIterator(null);
+                        double[] split_path_coords = new double[6];
+
+                        while(!pi.isDone()){
+                            int segment = pi.currentSegment(split_path_coords);
+                            if(segment == pi.SEG_MOVETO)backward_path = split_path_coords[0]+" "+split_path_coords[1];
+                            if(segment == pi.SEG_LINETO)backward_path =split_path_coords[0]+" "+split_path_coords[1]+" L "+backward_path;
+                            if(segment == pi.SEG_CUBICTO)backward_path = split_path_coords[4]+" "+split_path_coords[5]+" C "+split_path_coords[2]+" "+split_path_coords[3]+" "+split_path_coords[0]+" "+split_path_coords[1]+" "+backward_path;
+                            pi.next();
+                        }
+                        backward_path = "L "+backward_path;
+                        System.out.println("The forward path is "+forward_path);
+                        System.out.println("The backward path is "+backward_path);
+
+                        String element1 = "";
+                        String element2 = "";
+
+                        PathIterator split_iterator = s.getPathIterator(null);
+                        double[] element_segment_coords = new double[6];
+                        boolean first_element = true;
+                        while(!split_iterator.isDone()){
+                            int segment = split_iterator.currentSegment(split_path_coords);
+                            if(segment==split_iterator.SEG_MOVETO){
+                                element1 = element1+"M "+split_path_coords[0]+" "+split_path_coords[1];
+                            }
+
+                            if(first_element){
+                                if(segment == split_iterator.SEG_LINETO){
+                                    element1 = element1+" L "+split_path_coords[0]+" "+split_path_coords[1];
+                                    System.out.println("Split path begining is "+split_path_begining);
+                                    System.out.println("Split path ending is "+split_path_ending);
+                                    System.out.println("Line end is "+new Point2D.Double(split_path_coords[0], split_path_coords[1]));
+                                    if(split_path_begining == new Point2D.Double(split_path_coords[0], split_path_coords[1])){
+                                        element1 = element1+" "+forward_path;
+                                        element2 = element2+"M "+split_path_coords[0]+" "+split_path_coords[1];
+                                        first_element = false;
+                                    }
+                                    else if(split_path_ending == new Point2D.Double(split_path_coords[0], split_path_coords[1])){
+                                        element1 = element1+" "+backward_path;
+                                        element2 = element2+"M "+split_path_coords[0]+" "+split_path_coords[1];
+                                        first_element = false;
+                                    }
+                                }
+
+                                if(segment == split_iterator.SEG_CUBICTO){
+                                    element1 = element1+" C "+split_path_coords[0]+" "+split_path_coords[1]+" "+split_path_coords[2]+" "+split_path_coords[3]+" "+split_path_coords[4]+" "+split_path_coords[5];
+                                    System.out.println("Split path begining is "+split_path_begining);
+                                    System.out.println("Split path ending is "+split_path_ending);
+                                    System.out.println("Curve end is "+new Point2D.Double(split_path_coords[4], split_path_coords[5]));
+                                    if((split_path_begining.getX()==split_path_coords[4]) && (split_path_begining.getY()==split_path_coords[5])){
+                                        element1 = element1+" "+forward_path;
+                                        element2 = element2+"M "+split_path_coords[4]+" "+split_path_coords[5];
+                                        System.out.println("Came into the line 1079");
+                                        first_element = false;
+                                    }
+                                    else if((split_path_ending.getX()==split_path_coords[4]) && (split_path_ending.getY()==split_path_coords[5])){
+                                        element1 = element1+" "+backward_path;
+                                        element2 = element2+"M "+split_path_coords[4]+" "+split_path_coords[5];
+                                        first_element = false;
+                                        System.out.println("Came into the line 1086");
+                                    }
+                                }
+                            }
+                            else{
+                                if(segment == split_iterator.SEG_LINETO){
+                                    element2 = element2+" L "+split_path_coords[0]+" "+split_path_coords[1];
+                                    System.out.println("Split path begining is "+split_path_begining);
+                                    System.out.println("Split path ending is "+split_path_ending);
+                                    System.out.println("Line end is "+new Point2D.Double(split_path_coords[0], split_path_coords[1]));
+                                    if((split_path_begining.getX()==split_path_coords[0]) && (split_path_begining.getY()==split_path_coords[1])){
+                                        element2 = element2+" "+backward_path;
+                                        first_element = true;
+                                    }
+                                    else if((split_path_ending.getX()==split_path_coords[0]) && (split_path_ending.getY()==split_path_coords[1])){
+                                        element2 = element2+" "+forward_path;
+                                        first_element = true;
+                                        System.out.println("Came into the line 1103");
+                                    }
+                                }
+                                if(segment == split_iterator.SEG_CUBICTO){
+                                    element2 = element2+" C "+split_path_coords[0]+" "+split_path_coords[1]+" "+split_path_coords[2]+" "+split_path_coords[3]+" "+split_path_coords[4]+" "+split_path_coords[5];
+                                    System.out.println("Split path begining is "+split_path_begining);
+                                    System.out.println("Split path ending is "+split_path_ending);
+                                    System.out.println("Curve end is "+new Point2D.Double(split_path_coords[4], split_path_coords[5]));
+                                    if((split_path_begining.getX()==split_path_coords[4]) && (split_path_begining.getY()==split_path_coords[5])){
+                                        element2 = element2+" "+forward_path;
+                                        first_element = true;
+                                        System.out.println("Came into the line 1114");
+                                    }
+                                    else if((split_path_ending.getX()==split_path_coords[4]) && (split_path_ending.getY()==split_path_coords[5])){
+                                        element2 = element2+" "+backward_path;
+                                        first_element = true;
+                                        System.out.println("Came into the line 1119");
+                                    }
+                                }
+                            }
+                            split_iterator.next();
+                        }
+                        System.out.println("Hello Hello! First element is "+element1);
+                        System.out.println("Hello Hello! second element is "+element2);
+                    }                    
+                }
+            };
+            UpdateManager um = canvas.getUpdateManager();
+	    um.getUpdateRunnableQueue().invokeLater(r);
+        }
+
+/*        public void CurveSplitter(double[] curve_coords, double position, double[] left_curve, double[] right_curve){
+            int rounded = (int)position;
+            Point2D A = new Point2D.Double(curve_coords[0]+((curve_coords[2]-curve_coords[0])/100)*rounded, curve_coords[1]+((curve_coords[3]-curve_coords[1])/100)*rounded);
+            Point2D B = new Point2D.Double(curve_coords[2]+((curve_coords[4]-curve_coords[2])/100)*rounded, curve_coords[3]+((curve_coords[5]-curve_coords[3])/100)*rounded);
+            Point2D C = new Point2D.Double(curve_coords[4]+((curve_coords[6]-curve_coords[4])/100)*rounded, curve_coords[5]+((curve_coords[7]-curve_coords[5])/100)*rounded);
+
+            Point2D M = new Point2D.Double(A.getX()+((B.getX()-A.getX())/100)*rounded, A.getY()+((B.getY()-A.getY())/100)*rounded);
+            Point2D N = new Point2D.Double(B.getX()+((C.getX()-B.getX())/100)*rounded, B.getY()+((C.getY()-B.getY())/100)*rounded);
+
+            left_curve[0] = curve_coords[0];
+            left_curve[1] = curve_coords[1];
+            left_curve[2] = A.getX();
+            left_curve[3] = A.getY();
+            left_curve[4] = M.getX();
+            left_curve[5] = M.getY();
+
+            right_curve[0] = N.getX();
+            right_curve[1] = N.getY();
+            right_curve[2] = N.getX();
+            right_curve[3] = N.getY();
+            right_curve[4] = C.getX();
+            right_curve[5] = C.getY();
+
+//            System.out.println("In the splitter, the position is "+position);
+
+        }*/
+
+        public void registerListeners(Element element){
+        EventTarget t1 = (EventTarget) document.getElementById (element.getAttribute("id"));
+        t1.addEventListener ("mouseover", new OnMouseOverCircleAction (), false);
+        t1.addEventListener ("mouseout", new mouseOut (), false);
+        t1.addEventListener ("click", new OnClickAction (), false);
+        t1.addEventListener ("mousedown", new OnMouseDownAction (), false);
+        t1.addEventListener ("mouseup", new OnMouseUpAction (), false);
+        t1.addEventListener ("mousemove", new OnMouseMoveAction (), false);
+    }
+
+        public class OnMouseOverCircleAction implements EventListener {
+     public void handleEvent (Event evt) {
+         EventTarget tt = evt.getTarget();
+         Element e1 = (Element)tt;
+         e1.setAttribute ("stroke", "red");
+//         e1.setAttributeNS (null, "stroke-width", "5");
+//         System.out.println("Path Length of this element is "+e1.getAttribute("pathLength"));
+         e1.setAttributeNS(null, "pathLength", "200");
+        }
+      }
+
+    public class mouseOut implements EventListener {
+     public void handleEvent (Event evt) {
+         EventTarget tt = evt.getTarget();
+         Element e1 = (Element)tt;
+         e1.setAttribute ("stroke", "black");
+         e1.setAttributeNS (null, "stroke-width", "1");
+        }
+      }
+
+    public class OnMouseDownAction implements EventListener {
+     public void handleEvent (Event evt) {
+         EventTarget tt = evt.getTarget();
+         Element e1 = (Element)tt;
+         selected_shape = e1;
+         moveable = true;
+        }
+      }
+
+    public class OnMouseUpAction implements EventListener {
+     public void handleEvent (Event evt) {
+         EventTarget tt = evt.getTarget();
+         Element e1 = (Element)tt;
+         moveable = false;
+        }
+      }
+
+    public class OnMouseMoveAction implements EventListener {
+     public void handleEvent (Event evt) {
+         EventTarget tt = evt.getTarget();
+         Element e1 = (Element)tt;
+//         if(moveable) resizer();
+        }
+      }
+
+    public class OnClickAction implements EventListener {
+     public void handleEvent (Event evt) {
+         EventTarget tt = evt.getTarget();
+         Element e1 = (Element)tt;
+         selected_shape = e1;
+         Element root = document.getDocumentElement();
+         root.removeChild(e1);
+         root.appendChild(e1);
+        }
+      }
+    public void relocator(){
+        relocate();
+    }
+
+    public void relocator(int level){
+        scl = (level-50);
+        relocate();
+    }
+
+
+    public void relocate(){
+        Runnable r = new Runnable(){
+            public void run(){
+                selected_shape.setAttribute("transform", "translate("+shape_X+" "+shape_Y+")");
+            }
+        };
+        UpdateManager um = canvas.getUpdateManager();
+	um.getUpdateRunnableQueue().invokeLater(r);
+    }
+
+    public void resizer(int scale){
+        shape_scale = 50.0/(50+(50-scale));
+        resize();
+    }
+
+    public void resize(){
+        Runnable r = new Runnable(){
+            public void run(){
+                selected_shape.setAttribute("transform", "scale("+shape_scale+")");
+            }
+        };
+        UpdateManager um = canvas.getUpdateManager();
+	um.getUpdateRunnableQueue().invokeLater(r);
+    }
+
+    public void axisAdjust(){
+        Runnable r = new Runnable(){
+            public void run(){
+                axis_X.setAttribute("x1","0");
+                axis_X.setAttribute("y1",""+mouse_location.getY());
+                axis_X.setAttribute("x2",""+getWidth());
+                axis_X.setAttribute("y2",""+mouse_location.getY());
+
+                axis_Y.setAttribute("x1",""+mouse_location.getX());
+                axis_Y.setAttribute("y1","0");
+                axis_Y.setAttribute("x2",""+mouse_location.getX());
+                axis_Y.setAttribute("y2",""+getHeight());
+            }
+        };
+        UpdateManager um = canvas.getUpdateManager();
+	um.getUpdateRunnableQueue().invokeLater(r);
+    }
+}
