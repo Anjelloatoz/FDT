@@ -765,6 +765,14 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
         }
 
         public Element createNewLayer(Element element, String doc_id){
+
+            if(element.getOwnerDocument().isSameNode(rt.svgF.document)){
+                System.out.println("The element is a node os svgF");
+            }
+            else if(element.getOwnerDocument().isSameNode(rt.svgR.document)){
+                System.out.println("The element is a node os svgR");
+            }
+
             Document tmp_document = null;
             Document first_document = null;
             JSVGCanvas tmp_canvas = null;
@@ -800,6 +808,7 @@ public class SVGConjurer extends JFrame implements ChangeListener, MouseListener
                 reborn_node = DOMUtilities.parseXML(tmp_element_holder.toString(), tmp_document,tmp_canvas.getURI(), null, null,f);
                 System.out.println("After creating the reborn_node its grand child is: "+reborn_node.getFirstChild().getFirstChild().getLocalName());
                 container.appendChild(reborn_node.getFirstChild().getFirstChild());
+                registerPatternListeners((Element)container.getFirstChild());
                 System.out.println("Reborn_node successfully appended to the new container.");
             }
             catch(Exception ex2){
