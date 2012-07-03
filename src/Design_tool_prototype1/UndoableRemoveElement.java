@@ -22,8 +22,7 @@ public class UndoableRemoveElement extends AbstractUndoableEdit{
         this.old_element = element;
         this.document = svgc.document;
         Element root = document.getDocumentElement();
-//        root.removeChild(old_element);
-        old_element.getParentNode().removeChild(old_element);
+        root.removeChild(old_element);
     }
 
     public String getPresentationName(){

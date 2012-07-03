@@ -1,4 +1,4 @@
 Manifest-Version: 1.0
-SplashScreen-Image: Design_tool_prototype1/splash.bmp
+SplashScreen-Image: Design_tool_prototype1/splash.PNG
 X-COMMENT: Main-Class will be added automatically by build
 

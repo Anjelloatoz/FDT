@@ -17,14 +17,11 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import org.apache.xml.serialize.*;
-import org.w3c.dom.Element;
 
 import java.util.*;
 import java.io.File;
 import javax.imageio.*;
 
-import org.apache.batik.dom.svg.SVGDOMImplementation;
 import org.jvnet.flamingo.ribbon.*;
 import org.jvnet.flamingo.ribbon.RibbonTask;
 import org.jvnet.flamingo.ribbon.resize.*;
@@ -68,19 +65,6 @@ import bibliothek.extension.gui.dock.theme.BubbleTheme;
 import bibliothek.extension.gui.dock.theme.EclipseTheme;
 import bibliothek.gui.dock.themes.NoStackTheme;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.batik.dom.util.DOMUtilities;
-import java.io.StringReader;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import org.apache.batik.util.*;
-import org.apache.batik.dom.svg.SAXSVGDocumentFactory;
-import org.w3c.dom.*;
-
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
-
-
 public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionListener{
     JDesktopPane desk;
     JInternalFrame iframe;
@@ -115,7 +99,6 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     ControlPanel ctrlp;
     DrawingBoardFooter dbf;
     navigator nv = new navigator();
-    toolbox tb;
     JColorChooser colorChooser;
     JRibbonGallery gallery;
     final static String GALLERY_NAME = "Gallery";
@@ -135,7 +118,7 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
 
     Image image;
     java.util.List<Fabric> fabrics_list = new ArrayList<Fabric>();
-    java.util.List<Fabric> buttons_list = new ArrayList<Fabric>();
+    java.util.List<button> buttons_list = new ArrayList<button>();
 
     Container navigator_container;
 
@@ -144,15 +127,6 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     static Rectangle2D.Double splashTextArea;       // area where we draw the text
     static Rectangle2D.Double splashProgressArea;   // area where we draw the progress bar
     static Font font;
-
-    RibbonApplicationMenuEntryPrimary amEntryNew;
-    RibbonApplicationMenuEntryPrimary amEntryOpen;
-    RibbonApplicationMenuEntryPrimary amEntrySave;
-    RibbonApplicationMenuEntryPrimary amEntryClose;
-
-    Document empty_front;
-    Document empty_rear;
-    Dimension dim;
 
     private static class TopLeftDecoration implements DecoratedResizableIcon.IconDecorator {
         int number;
@@ -231,18 +205,15 @@ increaseSplash();
             System.out.println("Buttons list import error "+e);
         }
 increaseSplash();
-        amEntryNew = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "New Project", this, CommandButtonKind.ACTION_ONLY);
-        amEntryOpen = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "Open Project", this, CommandButtonKind.ACTION_ONLY);
-        amEntrySave = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "Save Project", this, CommandButtonKind.ACTION_ONLY);
-        amEntryClose = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "Close Project", this, CommandButtonKind.ACTION_ONLY);
-        amEntrySave.setEnabled(false);
-        amEntryClose.setEnabled(false);
+        RibbonApplicationMenuEntryPrimary amEntryNew = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "New", this/*new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+                System.out.println("Invoked creating new document");
+            }
+        }*/, CommandButtonKind.ACTION_ONLY);
 increaseSplash();
         RibbonApplicationMenu applicationMenu = new RibbonApplicationMenu();
 	applicationMenu.addMenuEntry(amEntryNew);
-        applicationMenu.addMenuEntry(amEntryOpen);
-        applicationMenu.addMenuEntry(amEntrySave);
-        applicationMenu.addMenuEntry(amEntryClose);
 increaseSplash();
         applicationMenu.setDefaultCallback(new RibbonApplicationMenuEntryPrimary.PrimaryRolloverCallback(){
             @Override
@@ -271,9 +242,8 @@ increaseSplash();
 splashText("Populating fabrics library");
 for(int j = 0; j < fabrics_list.size(); j++){
             try{
-//                File image_file = new File(fabrics_list.get(j).getFabricIcon());
-//                image = ImageIO.read(image_file);
-                image = fabrics_list.get(j).getFabricIcon();
+                File image_file = new File(fabrics_list.get(j).getFabricIcon());
+                image = ImageIO.read(image_file);
             }
             
             catch(Exception e){
@@ -291,14 +261,13 @@ increaseSplash();
 splashText("Populating buttons library");
         for(int j = 0; j < buttons_list.size(); j++){
             try{
-//                File image_file = new File(buttons_list.get(j).getbuttonIcon());
-  //              image = ImageIO.read(image_file);
-                image = buttons_list.get(j).getFabricIcon();
+                File image_file = new File(buttons_list.get(j).getbuttonIcon());
+                image = ImageIO.read(image_file);
             }
 
             catch(Exception e){
                 System.out.println("RibbonTest class - RibbonTest()Constructor - Button ImageIO problem: "+e);
-                System.out.println(buttons_list.get(j).getFabricNameLong());
+//                System.out.println(buttons_list.get(j).getbuttonIcon());
             }
 increaseSplash();
             java.awt.Image icon_image = image.getScaledInstance(55, 55, 10);
@@ -386,7 +355,7 @@ increaseSplash();
         this.getRibbon().addTask(new RibbonTask("Dress Form", dress_form_button_band));
         this.getRibbon().addTask(new RibbonTask("Buttons", buttons_button_band, button_gallery_band));
 increaseSplash();
-        dim = Toolkit.getDefaultToolkit().getScreenSize();
+        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         dbf = new DrawingBoardFooter(svgF);
         bordfooter = dbf.getDrawingBoardFooter();
 increaseSplash();
@@ -415,19 +384,17 @@ increaseSplash();
 splashText("Initializing drawing canvases");
         svgF = new SVGConjurer(dim, alt, dbf);
         svgR = new SVGConjurer(dim, alt, dbf);
+        dbf.svgc = svgF;
+increaseSplash();
         svgF.rt = this;
         svgR.rt = this;
-        dbf.svgc = svgF;
-
-increaseSplash();
-        
         alt.svgc = svgF;
 increaseSplash();
         alt.rt = this;
         pb.alt = alt;
         pb.nv = nv;
 increaseSplash();
-        tb = new toolbox(svgF);
+        toolbox tb = new toolbox(svgF);
         toolframe.add(tb.getToolbox());
 splashText("Loading the color palette");
         colorChooser = new JColorChooser();
@@ -435,7 +402,7 @@ increaseSplash();
         ColorSelectionModel model = colorChooser.getSelectionModel();
         model.addChangeListener(this);
 increaseSplash();
-        color_frame = new JInternalFrame("Color Palete", true, true, true, true);
+        color_frame = new JInternalFrame("Color Pallete", true, true, true, true);
         color_frame.setToolTipText("Color Pallete");
         color_frame.setBounds(dim.width-400, 0, 400, 380);
         color_frame.add(colorChooser);
@@ -468,7 +435,6 @@ splashText("Initializing the navigator");
 increaseSplash();
         navigator_frame.add(nv.getNavigator());
         navigator_frame.setVisible(true);
-
 increaseSplash();
         JScrollPane frontDrawingScrollPane = new JScrollPane(svgF.getBoard());
         JScrollPane rearDrawingScrollPane = new JScrollPane(svgR.getBoard());
@@ -536,6 +502,14 @@ increaseSplash();
         station.dropTree(grid.toTree());
         default_controller = station.getController();
 increaseSplash();
+/*        desk.add(iframe);
+        desk.add(color_frame);
+        desk.add(alter_frame);
+        desk.add(navigator_frame);
+        desk.add(control_frame);
+        desk.add(toolframe);
+*/
+//        this.add(desk);
         this.add(station.getComponent());
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 increaseSplash();
@@ -548,7 +522,13 @@ increaseSplash();
     }
 
     public void printLocations(){
-        station.setController(default_controller);
+/*        System.out.println("Navigator: "+station.getDockableLocationProperty(navigator_dock));
+        System.out.println("Drawing: "+station.getDockableLocationProperty(drawing_dock));
+        System.out.println("Color: "+station.getDockableLocationProperty(color_dock));
+        System.out.println("Alter: "+station.getDockableLocationProperty(alter_dock));
+        System.out.println("Control: "+station.getDockableLocationProperty(control_dock));
+        System.out.println("Tool: "+station.getDockableLocationProperty(tool_dock));
+*/        station.setController(default_controller);
     }
 
     public void stateChanged(ChangeEvent e) {
@@ -556,17 +536,17 @@ increaseSplash();
         svgR.color = colorChooser.getColor();
       }
 
-/*    public void addFabric(String new_fabric[]){
+    public void addFabric(String new_fabric[]){
 //        System.out.println("addFabric(String new_fabric[]) Called");
         Fabric fabric = new Fabric(new_fabric[0], new_fabric[1], new_fabric[2], new_fabric[3], new_fabric[4]);
         addFabric(fabric);
-    }*/
+    }
 
-/*    public void addButton(String new_button[]){
+    public void addButton(String new_button[]){
 //        System.out.println("addButton(String new_button[]) Called");
         button btn = new button(new_button[0], new_button[1], new_button[2], new_button[3], new_button[4]);
         addButton(btn);
-    }*/
+    }
 
     public void actionPerformed(ActionEvent ae){
         try{
@@ -592,49 +572,16 @@ increaseSplash();
             String new_button[] = new String[5];
             ImportScreen imp_scr = new ImportScreen(this, "Button", new_button);
         }
-        else if(jcb.getText().equals("New Project")){
+        else if(jcb.getText().equals("New")){
 //            patternObject po = new patternObject();
-            try{
-                closeProject();
-            }
-            catch(Exception ex){
-                System.out.println("Project close Exception");
-            }
             setBoards();
             projectObject po = new projectObject(svgF.document, svgR.document);
 
-            treeHandler th = new treeHandler(po, this, svgF);
+            treeHandler th = new treeHandler(po, this);
             navigator_container = navigator_dock.getContentPane();
             navigator_container.add(new JScrollPane(th.getTree()));
             svgF.project_object = po;
             svgF.th = th;
-            amEntrySave.setEnabled(true);
-            amEntryClose.setEnabled(true);
-        }
-        else if(jcb.getText().equals("Save Project")){
-            try{
-                projectWriter(svgF.project_object);
-            }
-            catch(Exception e){
-                System.out.println("Project save exception: "+e);
-            }            
-        }
-
-        else if(jcb.getText().equals("Open Project")){
-            try{
-                closeProject();
-            }
-            catch(Exception ex){
-                System.out.println("Project close Exception");
-            }
-            projectReader();
-            amEntrySave.setEnabled(true);
-            amEntryClose.setEnabled(true);
-        }
-        else if(jcb.getText().equals("Close Project")){
-            System.out.println("Test: "+svgF.document.getFirstChild().getChildNodes().getLength());
-
-            closeProject();
         }
         else if(jcb.getText().equals("Print")){
             svgF.filePrinter();
@@ -644,18 +591,16 @@ increaseSplash();
         catch(Exception e){
 //            System.out.println("The Exception is "+e);
             JCommandToggleButton jtb = (JCommandToggleButton)ae.getSource();
-            System.out.println("The name is "+jtb.getName());
+//            System.out.println("The name is "+jtb.getName());
             String tmp[] = jtb.getText().split("\\s");
 
             if(jtb.getName().equals("fabric")){
-                System.out.println("A fabrics button is pressed.:"+jtb.getParent().getComponentZOrder(jtb));
-//                svgF.fillUri = fabrics_list.get(Integer.parseInt(tmp[1])).getFabricMainImage().toString();
-                svgF.fill_image = fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricMainImage();
+                svgF.fillUri = fabrics_list.get(Integer.parseInt(tmp[1])).getFabricMainImage().toString();
                 svgF.fillPattern();
 //                System.out.println(svgF.fillUri.toString());
             }
             else if(jtb.getName().equals("button")){
-                svgF.setButton(buttons_list.get(Integer.parseInt(tmp[1])).getFabricMainImage());
+                svgF.setButton(buttons_list.get(Integer.parseInt(tmp[1])).getbuttonMainImage());
             }
         }
     }
@@ -664,29 +609,6 @@ increaseSplash();
         drawing_container.add(drawing_board_tabbs);
         drawing_container.add(bordfooter, BorderLayout.SOUTH);
         this.setVisible(true);
-    }
-
-    private void closeProject(){
-        NodeList nl = svgF.document.getFirstChild().getChildNodes();
-            java.util.List<Node> deletion_nodes = new ArrayList();
-            for(int i = 0; i < nl.getLength(); i++){
-                System.out.println("Element "+i+": "+((Element)nl.item(i)).getTagName()+" : "+((Element)nl.item(i)).getAttribute("id"));
-
-                if(!(((Element)nl.item(i)).getAttribute("id").equals("axis_X")||((Element)nl.item(i)).getAttribute("id").equals("axis_Y"))){
-                    System.out.println("To be removed:: "+"Element "+i+": "+((Element)nl.item(i)).getTagName()+" : "+((Element)nl.item(i)).getAttribute("id"));
-                    deletion_nodes.add(nl.item(i));
-                }
-            }
-
-            for(int i = 0; i < deletion_nodes.size(); i++){
-                svgF.document.getFirstChild().removeChild(deletion_nodes.get(i));
-            }
-
-            navigator_container.removeAll();
-            svgF.project_object = null;
-            svgF.th = null;
-            svgF.refresh();
-            setVisible(true);
     }
 
     public void resetProject(treeHandler th){
@@ -714,11 +636,14 @@ increaseSplash();
    }
 
     public void addFabric(Fabric fabric){
+//        System.out.println("addFabric(Fabric fabric) called");
         fabrics_list.add(fabric);
+//        System.out.println(fabrics_list.size()+" fabrics in the list.");
         fileWriter("fabric");
 
         try{
-            image = fabric.getFabricIcon();
+            File image_file = new File(fabric.getFabricIcon());
+            image = ImageIO.read(image_file);
         }
 
         catch(Exception e){
@@ -726,22 +651,20 @@ increaseSplash();
         }
 
         DecoratedResizableIcon dri = new DecoratedResizableIcon(new DisabledResizableIcon(RibbonElementPriority.TOP, 52, 52), new IconImageDecoration(image), new BottomRightDecoration(3));
-        JCommandToggleButton jtb  = new JCommandToggleButton("Texture "  + fabrics_list.size(), dri);
-        jtb.setName("fabric");
+        JCommandToggleButton jtb  = new JCommandToggleButton("Texture "  + 3, dri);
         jtb.addActionListener(this);
         band.addRibbonGalleryButtons(GALLERY_NAME, "Group ", jtb);
     }
 
-    public void addButton(Fabric button){
+    public void addButton(button btn){
 //        System.out.println("addFabric(Fabric fabric) called");
-        buttons_list.add(button);
+        buttons_list.add(btn);
 //        System.out.println(buttons_list.size()+" buttons in the list.");
         fileWriter("button");
 
         try{
-//            File image_file = new File(button.getbuttonIcon());
-  //          image = ImageIO.read(image_file);
-            image = button.getFabricIcon();
+            File image_file = new File(btn.getbuttonIcon());
+            image = ImageIO.read(image_file);
         }
 
         catch(Exception e){
@@ -753,6 +676,7 @@ increaseSplash();
         jtb.addActionListener(this);
         button_gallery_band.addRibbonGalleryButtons(BUTTON_GALLERY_NAME, "Button Group", jtb);
     }
+
 
     public void fileWriter(String file){
     try{
@@ -773,190 +697,6 @@ increaseSplash();
         System.out.println("Line 486: Exception "+e);
     }
 }
-
-public void projectReader(){
-    project p = null;
-    projectObject project_obj = new projectObject();
-/************************/
-FileFilter projectfilter = new FileNameExtensionFilter("Temporary project format (.lld)", "lld");
-    JFileChooser jfc = new JFileChooser();
-    jfc.addChoosableFileFilter(projectfilter);
-    jfc.setDialogTitle("Open Project File");
-    File file = jfc.getCurrentDirectory();
-//    System.out.println("The path is: "+file.getPath());
-    int result = jfc.showOpenDialog(this);
-
-    System.out.println(jfc.getSelectedFile().getName());
-    if(result == JFileChooser.CANCEL_OPTION) return;
-    String[] path = StringUtils.split(jfc.getCurrentDirectory().getPath(), "\\");
-
-    File selected_file = jfc.getSelectedFile();
-    String qualified_path = path[0];
-    for(int i = 1; i < path.length; i++){
-        qualified_path = qualified_path+"//" + path[i];
-    }
-
-/************************/
-    try{
-        ObjectInputStream objIn = new ObjectInputStream(new BufferedInputStream(new FileInputStream(qualified_path+"//"+selected_file.getName())));
-        p = (project)(objIn.readObject());
-        objIn.close();
-    }
-
-    catch(Exception e){
-        System.out.println("Project read Exception: "+ e);
-    }
-    Element root = svgF.document.getDocumentElement();
-    Node defs = null;
-    try {
-      String parser = XMLResourceDescriptor.getXMLParserClassName();
-      SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parser);
-//      System.out.println("p.defs is: "+p.defs);
-      defs = DOMUtilities.parseXML(p.defs, svgF.document,svgF.canvas.getURI(), null, null,f);
-    }
-    catch( Exception ex ){
-        ex.printStackTrace();
-    }
-
-    try{
-        Element e = svgF.document.createElement("svg");
-//        e.appendChild(defs);
-        root.appendChild(defs.getFirstChild());
-    }
-    catch(Exception ee){
-        System.out.append("ee error: "+ee);
-    }
-
-    for(int i = 0; i < p.patterns.size(); i++){
-        patternObject ptrn = new patternObject();
-        ptrn.pattern_name = p.patterns.get(i).pattern_name;
-        String parser = XMLResourceDescriptor.getXMLParserClassName();
-        SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parser);
-
-        try {
-            System.out.println(p.patterns.get(i).front);
-            Node ef = DOMUtilities.parseXML(p.patterns.get(i).front, svgF.document,svgF.canvas.getURI(), null, null,f);
-
-            Element el = svgF.document.createElement("svg");
-            el.appendChild(ef);
-
-            ptrn.front = el;
-            Element element1 = (Element)ptrn.front.getFirstChild();
-            ptrn.front = null;
-            ptrn.front = element1;            
-
-            root.appendChild(ptrn.front);
-            svgF.elementIterator(ptrn.front);
-        }
-
-        catch(Exception ex){
-            System.out.println("Project reader pattern creation error: "+ex);
-        }
-
-        try{
-            project_obj.addPatternObject(ptrn);
-        }
-        catch(Exception e){
-            System.out.println("The exception: "+e);
-        }
-    }
-
-    treeHandler th = new treeHandler(project_obj, this, svgF);
-
-    navigator_container = navigator_dock.getContentPane();
-    navigator_container.add(new JScrollPane(th.getTree()));
-    svgF.project_object = project_obj;
-    svgF.th = th;
-    setVisible(true);
-    setBoards();
-    svgF.refresh();
-}
-
-public void projectWriter(projectObject po){
-    
-    project p = new project();
-    CharArrayWriter tmp_character_array = new CharArrayWriter();
-
-    for(int i = 0; i < po.patterns.size(); i++){
-        pattern pt = new pattern();
-        pt.pattern_name = po.patterns.get(i).pattern_name;
-
-        try{
-            DOMUtilities.writeNode(po.patterns.get(i).front, tmp_character_array);
-            pt.front = tmp_character_array.toString();
-        }
-
-        catch(Exception e){
-            System.out.println("patterns creation exception: "+e);
-        }
-        p.patterns.add(pt);
-    }
-    System.out.println("OK");
-
-    CharArrayWriter defs = new CharArrayWriter();
-    Element defs_wrapper = svgF.document.createElementNS(SVGDOMImplementation.SVG_NAMESPACE_URI, "svg");
-//    defs_wrapper.appendChild(svgF.document.getDocumentElement().getElementsByTagName("defs").item(0));
-    NodeList nl = svgF.document.getElementsByTagName("defs");
-    Element pattern_defs = null;
-    for(int i = 0; i < nl.getLength(); i++){
-        if(((Element)nl.item(i)).getAttribute("id").equals("pattern_defs")){
-            System.out.println("Pattern defs found in the project writer");
-            pattern_defs = (Element)nl.item(i);
-        }
-    }
-    defs_wrapper.appendChild(pattern_defs.cloneNode(true));
-
-    try{
-        DOMUtilities.writeNode(defs_wrapper, defs);
-    }
-
-    catch(Exception e){
-        System.out.println("Defs creation exception: "+e);
-    }
-
-    p.defs = defs.toString();
-    CharArrayWriter out = new CharArrayWriter();
-
-    try{
-        DOMUtilities.writeDocument(svgF.document, out);
-    }
-
-    catch(Exception e){
-        System.out.println("projectWriter exception: "+e);
-    }
-
-    FileFilter projectfilter = new FileNameExtensionFilter("Temporary project format (.lld)", "lld");
-    JFileChooser jfc = new JFileChooser();
-    jfc.addChoosableFileFilter(projectfilter);
-    jfc.setDialogTitle("Save Project File");
-    File file = jfc.getCurrentDirectory();
-    System.out.println("The path is: "+file.getPath());
-    File name_file = new File(po.project_name);
-    jfc.setSelectedFile(name_file);
-    int result = jfc.showSaveDialog(this);
-
-    System.out.println(jfc.getSelectedFile().getName());
-    if(result == JFileChooser.CANCEL_OPTION) return;
-    String[] path = StringUtils.split(jfc.getCurrentDirectory().getPath(), "\\");
-
-    String qualified_path = path[0];
-    for(int i = 1; i < path.length; i++){
-        qualified_path = qualified_path+"//" + path[i];
-    }
-    System.out.println("Written path is"+qualified_path+"//"+jfc.getSelectedFile().getName());
-
-    try{
-        ObjectOutputStream objOut = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(qualified_path+"///"+jfc.getSelectedFile().getName()+".lld")));
-        objOut.writeObject(p);
-        objOut.close();
-        System.out.println("project written");
-    }
-
-    catch(Exception e){
-        System.out.println("Line 701: Exception "+e);
-    }
-}
-
     private static void splashInit()
     {
         // the splash screen object is created by the JVM, if it is displaying a splash image
@@ -976,11 +716,9 @@ public void projectWriter(projectObject po){
             int height = ssDim.height;
             int width = ssDim.width;
 
-
-
             // stake out some area for our status information
-            splashTextArea = new Rectangle2D.Double(15., height*0.35, width * .45, 20.);
-            splashProgressArea = new Rectangle2D.Double(width * .55, height*.60, width*.4, 12 );
+            splashTextArea = new Rectangle2D.Double(15., height*0.35, width * .45, 32.);
+            splashProgressArea = new Rectangle2D.Double(width * .55, height*.50, width*.4, 12 );
 
             // create the Graphics environment for drawing status info
             splashGraphics = mySplash.createGraphics();
@@ -993,7 +731,6 @@ public void projectWriter(projectObject po){
         }
     }
     private static void appInit(){
-        System.out.println("Came to the App");
         SwingUtilities.invokeLater(new Runnable(){
             public void run(){
                 try{
@@ -1013,7 +750,6 @@ public void projectWriter(projectObject po){
             Thread.sleep(200000);
         }
         catch(Exception e){
-
         }
 
         System.out.println("Finished AppInit");
@@ -1023,7 +759,7 @@ public void projectWriter(projectObject po){
     {
         if (mySplash != null && mySplash.isVisible())
         {
-            splashGraphics.setPaint(Color.BLACK);
+            splashGraphics.setPaint(Color.black);
             splashGraphics.fill(splashTextArea);
 
             // draw the text

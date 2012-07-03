@@ -3,23 +3,17 @@ package Design_tool_prototype1;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import java.util.ArrayList;
-import java.io.Serializable;
 
-public class projectObject implements Serializable{
+public class projectObject {
     String project_name = "Untitled project";
     Document front_document;
     Document rear_document;
 
     ArrayList<patternObject> patterns = new ArrayList();
-    ArrayList<Element> history_elements = new ArrayList();
 
     projectObject(Document front, Document rear){
         this.front_document = front;
         this.rear_document = rear;
-    }
-
-    projectObject(){
-        
     }
 
     public void addPatternObject(patternObject new_pattern){
@@ -30,14 +24,14 @@ public class projectObject implements Serializable{
         patterns.remove(old_pattern);
     }
 
-    public void addHistoryElement(Element old_element){
-        history_elements.add(old_element);
-        System.out.println("History Elements have "+history_elements.size()+" size.");
-    }
-
     public patternObject removePatternByElement(Element e){
+        System.out.println("%%%%%%%%%%%%%%%%%%% "+e.getAttribute("id"));
+        System.out.println("The number of patterns: "+patterns.size());
         for(int i = 0; i < patterns.size(); i++){
+            System.out.println("Passing Element: "+patterns.get(i).front.getAttribute("id"));
             if(patterns.get(i).front.equals(e)){
+                System.out.println("Element: "+patterns.get(i).front.getAttribute("id"));
+                System.out.println("One object FOUND");
                 patternObject removed_pattern = patterns.get(i);
                 removePatternObject(patterns.get(i));
                 return removed_pattern;
