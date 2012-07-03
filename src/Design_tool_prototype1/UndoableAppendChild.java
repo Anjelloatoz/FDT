@@ -25,11 +25,10 @@ public class UndoableAppendChild extends AbstractUndoableEdit{
         Child = child;
         prev_parent = (Element)child.getParentNode();
 //        System.out.println("Came into the UndoableAppendChild");
-Parent.appendChild(Child);
-        Runnable r = new Runnable(){
 
+        Runnable r = new Runnable(){
           public void run(){
-              
+              Parent.appendChild(Child);
           }
         };
         UpdateManager um = canvas.getUpdateManager();
@@ -43,10 +42,10 @@ Parent.appendChild(Child);
     public void redo() throws CannotRedoException{
         super.redo();
 //        System.out.println("Came into the UndoableAppendChild redo");
-Parent.appendChild(Child);
+
         Runnable r = new Runnable(){
           public void run(){
-              
+              Parent.appendChild(Child);
           }
         };
         UpdateManager um = canvas.getUpdateManager();
@@ -58,16 +57,16 @@ Parent.appendChild(Child);
 //        System.out.println("Came into the UndoableAppendChild undo");
 //        System.out.println("prev_Parent: "+prev_Parent.getLocalName());
 //        System.out.println("Child: "+Child.getLocalName());
-try{
+
+        Runnable r = new Runnable(){
+          public void run(){
+//
+              try{
               prev_Parent.appendChild(Child);
               }
               catch(Exception e){
                   Parent.removeChild(Child);
               }
-        Runnable r = new Runnable(){
-          public void run(){
-//
-              
           }
         };
         UpdateManager um = canvas.getUpdateManager();

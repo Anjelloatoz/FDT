@@ -20,9 +20,9 @@ public class UndoableClearDrawingLocations extends AbstractUndoableEdit{
         this.current_drawing_locations = svgc.current_drawing_locations;
         this.prev_current_drawing_locations = (ArrayList)current_drawing_locations.clone();
         current_drawing_locations.clear();
-//        System.out.println("****: "+prev_current_drawing_locations.size());
-//        System.out.println("Came into the UndoableClearDrawingLocations");
-//        System.out.println("3. current_drawing_locations: "+current_drawing_locations.size());
+        System.out.println("****: "+prev_current_drawing_locations.size());
+        System.out.println("Came into the UndoableClearDrawingLocations");
+        System.out.println("3. current_drawing_locations: "+current_drawing_locations.size());
     }
 
     public String getPresentationName(){
@@ -31,20 +31,20 @@ public class UndoableClearDrawingLocations extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
-//        System.out.println("Came into the UndoableClearDrawingLocations redo");
-//        System.out.println("before current_drawing_locations: "+current_drawing_locations.size());
+        System.out.println("Came into the UndoableClearDrawingLocations redo");
+        System.out.println("before current_drawing_locations: "+current_drawing_locations.size());
         current_drawing_locations.clear();
 
-//        System.out.println("after current_drawing_locations: "+current_drawing_locations.size());
+        System.out.println("after current_drawing_locations: "+current_drawing_locations.size());
     }
 
     public void undo() throws CannotUndoException{
         super.undo();
-//        System.out.println("    UNDO-UndoableClearDrwingLocations");
+        System.out.println("    UNDO-UndoableClearDrwingLocations");
 //        System.out.println("before current_drawing_locations: "+current_drawing_locations.size());
         current_drawing_locations = prev_current_drawing_locations;
         
-//        System.out.println("3. current_drawing_locations: "+current_drawing_locations.size());
+        System.out.println("3. current_drawing_locations: "+current_drawing_locations.size());
 //        System.out.println("after current_drawing_locations: "+current_drawing_locations.size());
         svgc.printlocations("length: "+current_drawing_locations.size());
     }

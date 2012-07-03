@@ -11,6 +11,7 @@ public class UndoableLocationPoint extends AbstractUndoableEdit{
     private Vector addedEdits;
     public UndoableLocationPoint(String name){
         location_name = name;
+        System.out.println("Came into the UndoableLocationPoint");
     }
 
     public String getPresentationName(){
@@ -20,10 +21,12 @@ public class UndoableLocationPoint extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
+        System.out.println("Came into the redo");
     }
 
     public void undo() throws CannotUndoException{
         super.undo();
+        System.out.println("Came into the undo");
     }
 
     public boolean addEdit(UndoableEdit anEdit){

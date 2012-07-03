@@ -15,6 +15,7 @@ public class UndoableDrawingNumberDeduct extends AbstractUndoableEdit{
 
     public UndoableDrawingNumberDeduct(SVGConjurer svgc){
         this.svgc = svgc;
+        System.out.println("Came into the UndoableEdit");
         svgc.drawing_number = svgc.drawing_number-1;
     }
 
@@ -24,11 +25,13 @@ public class UndoableDrawingNumberDeduct extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
+        System.out.println("Came into the redo");
         svgc.drawing_number = svgc.drawing_number-1;
     }
 
     public void undo() throws CannotUndoException{
         super.undo();
+        System.out.println("Came into the undo");
         svgc.drawing_number = svgc.drawing_number+1;
     }
 }

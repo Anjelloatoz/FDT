@@ -25,10 +25,7 @@ public class UndoableAddLocation extends AbstractUndoableEdit{
         this.Location_list = location_list;
         this.doc = document;
         this.canvas = svgc.canvas;
-        if(!svgc.on_bounds){
-            svgc.registerEditPointListeners(Location);
-        }
-        
+        svgc.registerEditPointListeners(Location);
 //        System.out.println("Came into the UndoableAddLocation");
 Location_list.add(Location);
         Runnable r = new Runnable(){

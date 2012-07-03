@@ -15,6 +15,7 @@ public class UndoableClearPointList extends AbstractUndoableEdit{
     List<Point2D> prev_points_list = new ArrayList();
 
     public UndoableClearPointList(List<Point2D> current_list){
+        System.out.println("Came into the UndoableClearList");
         this.current_points_list = current_list;
         for(int i = 0; i < this.current_points_list.size(); i++){
             this.prev_points_list.add(new Point2D.Double(current_points_list.get(i).getX(), current_points_list.get(i).getY()));
@@ -28,6 +29,7 @@ public class UndoableClearPointList extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
+        System.out.println("Came into the UndoableClearPointList redo");
         for(int i = 0; i < this.current_points_list.size(); i++){
             this.prev_points_list.add(new Point2D.Double(current_points_list.get(i).getX(), current_points_list.get(i).getY()));
         }
@@ -36,6 +38,7 @@ public class UndoableClearPointList extends AbstractUndoableEdit{
 
     public void undo() throws CannotUndoException{
         super.undo();
+        System.out.println("Came into the UndoableClearPointList undo");
         for(int i = 0; i < this.prev_points_list.size(); i++){
             this.current_points_list.add(prev_points_list.get(i));
         }

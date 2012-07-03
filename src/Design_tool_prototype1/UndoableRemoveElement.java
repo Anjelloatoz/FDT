@@ -21,9 +21,9 @@ public class UndoableRemoveElement extends AbstractUndoableEdit{
         this.canvas = svgc.canvas;
         this.old_element = element;
         this.document = svgc.document;
+        System.out.println("Came into the UndoableEdit");
         Element root = document.getDocumentElement();
-//        root.removeChild(old_element);
-        old_element.getParentNode().removeChild(old_element);
+        root.removeChild(old_element);
     }
 
     public String getPresentationName(){
@@ -32,12 +32,14 @@ public class UndoableRemoveElement extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
+        System.out.println("Came into the redo");
         Element root = document.getDocumentElement();
         root.removeChild(old_element);
     }
 
     public void undo() throws CannotUndoException{
         super.undo();
+        System.out.println("Came into the undo");
         Element root = document.getDocumentElement();
         root.appendChild(old_element);
     }
