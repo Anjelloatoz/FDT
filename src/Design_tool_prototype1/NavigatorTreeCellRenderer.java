@@ -21,7 +21,6 @@ class NavigatorTreeCellRenderer extends DefaultTreeCellRenderer {
     ImageIcon containerIcon;
     ImageIcon buttonIcon;
     ImageIcon patternHistoryIcon;
-    ImageIcon textIcon;
 
     public NavigatorTreeCellRenderer() {
         projectIcon = new ImageIcon("project_icon.gif");
@@ -31,7 +30,6 @@ class NavigatorTreeCellRenderer extends DefaultTreeCellRenderer {
         rearIcon = new ImageIcon("rear_view_icon.gif");
         containerIcon = new ImageIcon("container_icon.gif");
         patternHistoryIcon = new ImageIcon("pattern_history_icon.gif");
-        textIcon = new ImageIcon("text_icon.gif");
     }
 
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel,boolean expanded,boolean leaf, int row, boolean hasFocus){
@@ -55,35 +53,21 @@ class NavigatorTreeCellRenderer extends DefaultTreeCellRenderer {
             catch(Exception e2){
                 try{
                     element = (Element)nodeObj;
-                    if(element.getAttribute("id").equals("frontAnjelloatoz@gmail.com")){
-                        setIcon(frontIcon);
-                        setText("Front Face");
-                    }
-                    else if(element.getAttribute("id").equals("rearAnjelloatoz@gmail.com")){
-                        setIcon(rearIcon);
-                        setText("Rear Face");
+                    if(element.getNodeName().equals("svg")){
+                        setIcon(containerIcon);
+                        setText(element.getAttribute("id"));
                     }
                     else if(element.getNodeName().equals("path")){
                         setIcon(getElementIcon(element));
                         setText(element.getAttribute("id"));
                     }
-                    else if(element.getNodeName().equals("text")){
-                        setIcon(textIcon);
-                        setText(element.getFirstChild().getFirstChild().getTextContent());
-                    }
                 }
                 catch(Exception e3){
-//                    System.out.println("The filtered down node is: "+nodeObj.toString());
-                    if(nodeObj == null){
-                        System.out.println("This node is null, RETURNING");
-                        return null;
-                    }
-                    if(nodeObj instanceof Element){
-                        System.out.println("This is a ");
+                    if(nodeObj.equals("Front face")){
                         setIcon(frontIcon);
                         setText("Front Face");
                     }
-                    else if(nodeObj instanceof Element){
+                    else if(nodeObj.equals("Rear face")){
                         setIcon(rearIcon);
                         setText("Rear Face");
                     }

@@ -3,8 +3,6 @@ package Design_tool_prototype1;
 import javax.swing.event.*;
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import javax.swing.plaf.basic.BasicInternalFrameUI;
-import java.awt.image.*;
-import java.net.URI;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -14,7 +12,6 @@ import java.awt.SplashScreen;
 import java.awt.geom.Rectangle2D;
 
 import javax.swing.filechooser.FileFilter;
-import javax.swing.plaf.metal.MetalTreeUI;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.awt.Toolkit;
@@ -52,16 +49,10 @@ import javax.swing.colorchooser.ColorSelectionModel;
 import javax.imageio.*;
 import java.io.*;
 
-import java.awt.Font;
-import java.awt.GraphicsEnvironment;
-
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
-import javax.swing.border.*;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyListener;
-import java.awt.event.KeyEvent;
 import org.jvnet.flamingo.common.*;
 import org.jvnet.flamingo.ribbon.*;
 import org.jvnet.flamingo.common.icon.EmptyResizableIcon;
@@ -90,7 +81,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
 
-public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionListener, KeyListener{
+public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionListener{
     JDesktopPane desk;
     JInternalFrame iframe;
     JInternalFrame toolframe;
@@ -102,9 +93,6 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     JTabbedPane drawing_board_tabbs = new JTabbedPane();
     Container drawing_container;
     JPanel bordfooter;
-    SVGConjurer selectedSVGC;
-
-    JTextArea text_type_area = new JTextArea(80, 20);
 
     DockController controller = new DockController();
     DockController default_controller = new DockController();
@@ -116,9 +104,8 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     DefaultDockable control_dock = new DefaultDockable();
     DefaultDockable tool_dock = new DefaultDockable();
 
-    JCommandToggleButton[] fabric_buttons;
+    JCommandToggleButton[] buttons;
     JCommandToggleButton[] button_buttons;
-    JCommandToggleButton[] pattern_buttons;
     JFrame frame;
     JButton line_bt;
     paintBoard pb;
@@ -133,22 +120,13 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     JRibbonGallery gallery;
     final static String GALLERY_NAME = "Gallery";
     final static String BUTTON_GALLERY_NAME = "Button Gallery";
-    final static String PATTERN_GALLERY_NAME = "Pattern Gallery";
-
-    JRibbonBand texture_gallery_band;
-    JRibbonBand texture_controls_band;
-
-    JRibbonBand dress_form_controls_band;
-
-    JRibbonBand buttons_controls_band;
+    JRibbonBand band;
     JRibbonBand button_gallery_band;
-
-    JRibbonBand pattern_controls_band;
-    JRibbonBand pattern_gallery_band;
-
-    JRibbonBand text_controls_band;
-    JRibbonBand text_entry_band;
-    JRibbonBand text_resize_band;
+    JRibbonBand dress_form_band;
+    JRibbonBand button_band;
+    JRibbonBand button_button_band;
+    JRibbonBand dress_form_button_band;
+    JRibbonBand buttons_button_band;
 
     private DrawingBoardRule columnView;
     private DrawingBoardRule rowView;
@@ -158,16 +136,14 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     Image image;
     java.util.List<Fabric> fabrics_list = new ArrayList<Fabric>();
     java.util.List<Fabric> buttons_list = new ArrayList<Fabric>();
-    java.util.List<patternPackage> pattern_list = new ArrayList<patternPackage>();
 
     Container navigator_container;
 
-    static SplashScreen mySplash;
-    static Graphics2D splashGraphics;
-    static Rectangle2D.Double splashTextArea;
-    static Rectangle2D.Double splashProgressArea;
+    static SplashScreen mySplash;                   // instantiated by JVM we use it to get graphics
+    static Graphics2D splashGraphics;               // graphics context for overlay of the splash image
+    static Rectangle2D.Double splashTextArea;       // area where we draw the text
+    static Rectangle2D.Double splashProgressArea;   // area where we draw the progress bar
     static Font font;
-    Font[] fnt;
 
     RibbonApplicationMenuEntryPrimary amEntryNew;
     RibbonApplicationMenuEntryPrimary amEntryOpen;
@@ -178,10 +154,9 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     Document empty_rear;
     Dimension dim;
 
-    projectObject project_obj;
-
     private static class TopLeftDecoration implements DecoratedResizableIcon.IconDecorator {
         int number;
+
         public TopLeftDecoration(int number){
             this.number = number;
         }
@@ -194,7 +169,7 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
 
     private static class BottomRightDecoration implements DecoratedResizableIcon.IconDecorator {
         int number;
-
+        
         public BottomRightDecoration(int number){
             this.number = number;
         }
@@ -219,65 +194,24 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
     ribbonTest(){
         super("Anjelloatoz Clothing Fashion Designer");
         increaseSplash();
-        splashText("Initializing GUI");
-
+splashText("Initializing GUI");
         controller.add(station);
+        BubbleTheme bt = new BubbleTheme();
         controller.setTheme(new NoStackTheme(new EclipseTheme()));
         SplitDockGrid grid = new SplitDockGrid();
         increaseSplash();
-
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        ge.getAllFonts();
-        fnt= ge.getAllFonts();
-
-        /**---- Setting the Main Icon ----**/
         Image frame_image;
+increaseSplash();
         try{
-            File frame_icon = new File("curve_bt.gif");
+        File frame_icon = new File("curve_bt.gif");
             frame_image = ImageIO.read(frame_icon);
             frame.setIconImage(frame_image);
         }
         catch(Exception e){
-            System.out.println("frame icon error: "+e);
+        System.out.println("frame icon error: "+e);
         }
-
-        /**---- Creating the Application Menu ----**/
-        RibbonApplicationMenu applicationMenu = new RibbonApplicationMenu();
-
-        amEntryNew = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "New Project", this, CommandButtonKind.ACTION_ONLY);
-        amEntryOpen = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "Open Project", this, CommandButtonKind.ACTION_ONLY);
-        amEntrySave = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "Save Project", this, CommandButtonKind.ACTION_ONLY);
-        amEntryClose = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "Close Project", this, CommandButtonKind.ACTION_ONLY);
-        amEntrySave.setEnabled(false);
-        amEntryClose.setEnabled(false);
-	applicationMenu.addMenuEntry(amEntryNew);
-        applicationMenu.addMenuEntry(amEntryOpen);
-        applicationMenu.addMenuEntry(amEntrySave);
-        applicationMenu.addMenuEntry(amEntryClose);
-        applicationMenu.setDefaultCallback(new RibbonApplicationMenuEntryPrimary.PrimaryRolloverCallback(){
-            @Override
-            public void menuEntryActivated(JPanel targetPanel){
-                targetPanel.removeAll();
-                JCommandButtonPanel openHistoryPanel = new JCommandButtonPanel(CommandButtonDisplayState.MEDIUM);
-                String groupName = "Default Documents";
-                openHistoryPanel.addButtonGroup(groupName);
-                increaseSplash();
-                for (int i = 0; i < 5; i++) {
-                    JCommandButton historyButton = new JCommandButton(i+ "    " + "default" + i + ".html", new EmptyResizableIcon(32));
-                    historyButton.setHorizontalAlignment(SwingUtilities.LEFT);
-                    openHistoryPanel.addButtonToLastGroup(historyButton);
-                }
-
-                openHistoryPanel.setMaxButtonColumns(1);
-                targetPanel.setLayout(new BorderLayout());
-                targetPanel.add(openHistoryPanel, BorderLayout.CENTER);
-            }
-        });
-
-        this.getRibbon().setApplicationMenu(applicationMenu);
-        increaseSplash();/**---- Finished Creating the Application Menu ----**/
-
-        /**----- Read in Gallery Files ----**/
+        increaseSplash();
+increaseSplash();
         try{
             ObjectInputStream objIn = new ObjectInputStream(new BufferedInputStream(new FileInputStream("fabrics.dat")));
             fabrics_list = (ArrayList)(objIn.readObject());
@@ -287,7 +221,7 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
             System.out.println("Fabrics list import error "+e);
         }
         increaseSplash();
-
+increaseSplash();
         try{
             ObjectInputStream objIn = new ObjectInputStream(new BufferedInputStream(new FileInputStream("buttons.dat")));
             buttons_list = (ArrayList)(objIn.readObject());
@@ -296,213 +230,179 @@ public class ribbonTest extends JRibbonFrame implements ChangeListener, ActionLi
         catch(Exception e){
             System.out.println("Buttons list import error "+e);
         }
-        increaseSplash();
-
-        try{
-            ObjectInputStream objIn = new ObjectInputStream(new BufferedInputStream(new FileInputStream("patterns.dat")));
-            pattern_list = (ArrayList)(objIn.readObject());
-            objIn.close();
-        }
-        catch(Exception e){
-            System.out.println("Pattern list import error "+e);
-        }
-        increaseSplash();/**----- Finished Reading Gallery Files ----**/
-
-        /**----- Populating the Fabrics Library ----**/
-        fabric_buttons = new JCommandToggleButton[fabrics_list.size()];
-        for(int j = 0; j < fabrics_list.size(); j++){
+increaseSplash();
+        amEntryNew = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "New Project", this, CommandButtonKind.ACTION_ONLY);
+        amEntryOpen = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "Open Project", this, CommandButtonKind.ACTION_ONLY);
+        amEntrySave = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "Save Project", this, CommandButtonKind.ACTION_ONLY);
+        amEntryClose = new RibbonApplicationMenuEntryPrimary(new EmptyResizableIcon(32), "Close Project", this, CommandButtonKind.ACTION_ONLY);
+        amEntrySave.setEnabled(false);
+        amEntryClose.setEnabled(false);
+increaseSplash();
+        RibbonApplicationMenu applicationMenu = new RibbonApplicationMenu();
+	applicationMenu.addMenuEntry(amEntryNew);
+        applicationMenu.addMenuEntry(amEntryOpen);
+        applicationMenu.addMenuEntry(amEntrySave);
+        applicationMenu.addMenuEntry(amEntryClose);
+increaseSplash();
+        applicationMenu.setDefaultCallback(new RibbonApplicationMenuEntryPrimary.PrimaryRolloverCallback(){
+            @Override
+            public void menuEntryActivated(JPanel targetPanel){
+                targetPanel.removeAll();
+                JCommandButtonPanel openHistoryPanel = new JCommandButtonPanel(CommandButtonDisplayState.MEDIUM);
+                String groupName = "Default Documents";
+                openHistoryPanel.addButtonGroup(groupName);
+increaseSplash();
+                for (int i = 0; i < 5; i++) {
+                    JCommandButton historyButton = new JCommandButton(i+ "    " + "default" + i + ".html", new EmptyResizableIcon(32));
+                    historyButton.setHorizontalAlignment(SwingUtilities.LEFT);
+                    openHistoryPanel.addButtonToLastGroup(historyButton);
+                }
+                
+                openHistoryPanel.setMaxButtonColumns(1);
+                targetPanel.setLayout(new BorderLayout());
+                targetPanel.add(openHistoryPanel, BorderLayout.CENTER);
+            }
+        });
+increaseSplash();
+        this.getRibbon().setApplicationMenu(applicationMenu);
+        buttons = new JCommandToggleButton[fabrics_list.size()];
+        button_buttons = new JCommandToggleButton[buttons_list.size()];
+increaseSplash();
+splashText("Populating fabrics library");
+for(int j = 0; j < fabrics_list.size(); j++){
             try{
+//                File image_file = new File(fabrics_list.get(j).getFabricIcon());
+//                image = ImageIO.read(image_file);
                 image = fabrics_list.get(j).getFabricIcon();
             }
-
+            
             catch(Exception e){
                 System.out.println("RibbonTest class - RibbonTest()Constructor - Fabric ImageIO problem: "+e);
             }
+increaseSplash();
             DecoratedResizableIcon dri = new DecoratedResizableIcon(new DisabledResizableIcon(RibbonElementPriority.TOP, 52, 52), new IconImageDecoration(image), new BottomRightDecoration(j));
-            JCommandToggleButton jtb  = new JCommandToggleButton(fabrics_list.get(j).getFabricNameShort().substring(0, 10), dri);
-            jtb.setName("fabric "+j);
+            JCommandToggleButton jtb  = new JCommandToggleButton("Texture "  + j, dri);
+            jtb.setName("fabric");
+increaseSplash();
             jtb.addActionListener(this);
-            this.fabric_buttons[j] = jtb;
+            this.buttons[j] = jtb;
         }
-        increaseSplash();/**----- Finished Populating the Fabrics Library ----**/
-
-        /**----- Populating the Buttons Library ----**/
-        button_buttons = new JCommandToggleButton[buttons_list.size()];
+increaseSplash();
+splashText("Populating buttons library");
         for(int j = 0; j < buttons_list.size(); j++){
             try{
+//                File image_file = new File(buttons_list.get(j).getbuttonIcon());
+  //              image = ImageIO.read(image_file);
                 image = buttons_list.get(j).getFabricIcon();
             }
 
             catch(Exception e){
-                System.out.println("RibbonTest()Constructor - Button ImageIO problem: "+e);
+                System.out.println("RibbonTest class - RibbonTest()Constructor - Button ImageIO problem: "+e);
                 System.out.println(buttons_list.get(j).getFabricNameLong());
             }
+increaseSplash();
             java.awt.Image icon_image = image.getScaledInstance(55, 55, 10);
             DecoratedResizableIcon dri = new DecoratedResizableIcon(new DisabledResizableIcon(RibbonElementPriority.TOP, 52, 52), new IconImageDecoration(icon_image), new BottomRightDecoration(j));
-            JCommandToggleButton button_tb  = new JCommandToggleButton(buttons_list.get(j).getFabricNameShort().substring(0, 10), dri);
-            button_tb.setName("button "+j);
+            JCommandToggleButton button_tb  = new JCommandToggleButton("Button "  + j, dri);
+increaseSplash();
+            button_tb.setName("button");
             button_tb.addActionListener(this);
             this.button_buttons[j] = button_tb;
-        }/**----- Finished Populating the Buttons Library ----**/
-
-        /**----- Populating the Pattern Library ----**/
-        pattern_buttons = new JCommandToggleButton[pattern_list.size()];
-        for(int j = 0; j < pattern_list.size(); j++){
-            try{
-                image = pattern_list.get(j).getPatternFrontImage();
-                image = image.getScaledInstance(80, 65, 10);
-            }
-
-            catch(Exception e){
-                System.out.println("RibbonTest()Constructor - Pattern ImageIO problem: "+e);
-            }
-
-            DecoratedResizableIcon dri = new DecoratedResizableIcon(new DisabledResizableIcon(RibbonElementPriority.TOP, 52, 52), new IconImageDecoration(image), new BottomRightDecoration(j));
-            JCommandToggleButton jtb  = new JCommandToggleButton(pattern_list.get(j).ptrn.pattern_name.substring(0, 10), dri);
-            jtb.setName("pattern "+j);
-            jtb.addActionListener(this);
-            this.pattern_buttons[j] = jtb;
-        }increaseSplash();/**----- Finished Populating the Pattern Library ----**/
-
+        }
+increaseSplash();
+        band = new JRibbonBand("Texture Gallery", new EmptyResizableIcon(32));
+        button_band = new JRibbonBand("Import", new EmptyResizableIcon(32));
+        dress_form_button_band = new JRibbonBand("Dress Form Controls", new EmptyResizableIcon(32));
+        buttons_button_band = new JRibbonBand("Button Controls", new EmptyResizableIcon(32));
+increaseSplash();
+        button_gallery_band = new JRibbonBand("Button Gallery", new EmptyResizableIcon(32));
+        button_button_band = new JRibbonBand("Buttons Control", new EmptyResizableIcon(32));
+increaseSplash();
         Map<RibbonElementPriority, Integer> visibleButtonCounts = new HashMap<RibbonElementPriority, Integer>();
         visibleButtonCounts.put(RibbonElementPriority.LOW, 4);
 	visibleButtonCounts.put(RibbonElementPriority.MEDIUM, 5);
 	visibleButtonCounts.put(RibbonElementPriority.TOP, 6);
-
-        /**---- Assigning the Texture Controls ----**/
-        texture_controls_band = new JRibbonBand("Import", new EmptyResizableIcon(32));
-        JCommandButton import_bt = new JCommandButton("Import");
-        import_bt.addActionListener(this);
-        JCommandButton print = new JCommandButton("Print");
-        print.addActionListener(this);
-        texture_controls_band.addCommandButton(print, RibbonElementPriority.MEDIUM);
-        texture_controls_band.addCommandButton(import_bt, RibbonElementPriority.MEDIUM);
-        /**---- Finished Assigning the Texture Controls ----**/
-
-        /**---- Assigning the Texture Gallery ----**/
-        texture_gallery_band = new JRibbonBand("Texture Gallery", new EmptyResizableIcon(32));
+increaseSplash();
         java.util.List<StringValuePair<java.util.List<JCommandToggleButton>>> galleryButtons = new ArrayList<StringValuePair<java.util.List<JCommandToggleButton>>>();
 	java.util.List<JCommandToggleButton> galleryButtonsList = new ArrayList<JCommandToggleButton>();
+increaseSplash();
         for (int j = 0; j < fabrics_list.size(); j++){
-            galleryButtonsList.add(this.fabric_buttons[j]);
+            galleryButtonsList.add(this.buttons[j]);
         }
-        galleryButtons.add(new StringValuePair<java.util.List<JCommandToggleButton>>("Group " , galleryButtonsList));
-        texture_gallery_band.addRibbonGallery(GALLERY_NAME, galleryButtons, visibleButtonCounts, 6, 4, RibbonElementPriority.TOP);
-        /**---- Finished Assigning the Texture Gallery ----**/
-
-        /**---- Assigning the Dress Form controls ----**/
-        dress_form_controls_band = new JRibbonBand("Dress Form Controls", new EmptyResizableIcon(32));
-        JCommandButton import_img = new JCommandButton("Import Guide Image", new EmptyResizableIcon(32));
-        import_img.addActionListener(this);
-        dress_form_controls_band.addCommandButton(import_img, RibbonElementPriority.MEDIUM);
-        dress_form_controls_band.setResizePolicies(CoreRibbonResizePolicies.getCorePoliciesRestrictive(texture_gallery_band));
-        /**---- Finished Assigning the Dress Form controls ----**/
-
-        /**---- Assigning the Button Band controls ----**/
-        buttons_controls_band = new JRibbonBand("Button Controls", new EmptyResizableIcon(32));
-        JCommandButton import_button = new JCommandButton("Import Button", new EmptyResizableIcon(32));
-        import_button.addActionListener(this);
-        buttons_controls_band.addCommandButton(import_button, RibbonElementPriority.MEDIUM);
-        buttons_controls_band.setResizePolicies(CoreRibbonResizePolicies.getCorePoliciesRestrictive(texture_gallery_band));
-        /**---- Finish Assigning the Button Band controls ----**/
-
-        /**---- Assigning the Texture Controls ----**/
-        text_controls_band = new JRibbonBand("Select Font", new EmptyResizableIcon(32));
-        Object[] font_names = new Object[fnt.length];
-        for(int x = 0; x < fnt.length; x++){
-            font_names[x] = fnt[x].getFontName();
-        }
-        JComboBox fonts_box = new JComboBox(font_names);
-        fonts_box.setName("fonts box");
-        fonts_box.addActionListener(this);
-        JRibbonComponent games = new JRibbonComponent(new EmptyResizableIcon(32), "Fonts", fonts_box);
-        text_controls_band.addRibbonComponent(games);
-
-        String[] font_sizes = new String[200];
-        for(int i = 0; i < 200; i++){
-            font_sizes[i] = i+"";
-        }
-        JComboBox fonts_size_box = new JComboBox(font_sizes);
-        fonts_size_box.setName("font size");
-
-        fonts_size_box.addActionListener(this);
-
-        JButton edit_path = new JButton("Edit Path");
-        edit_path.setName("edit path");
-        edit_path.addActionListener(this);
-
-        text_type_area.addKeyListener(this);
-        text_type_area.setForeground(Color.CYAN);
-        text_type_area.setBackground(Color.red);
-        text_entry_band = new JRibbonBand("Enter the text", new EmptyResizableIcon(32));
-        text_entry_band.addRibbonComponent(new JRibbonComponent(new EmptyResizableIcon(32), "", text_type_area));
-        text_entry_band.addRibbonComponent(new JRibbonComponent(new EmptyResizableIcon(32), "", edit_path));
-        
-        text_entry_band.setMaximumSize(new Dimension(100, 30));
-
-        text_resize_band = new JRibbonBand("Font Size", new EmptyResizableIcon(32));
-        text_resize_band.addRibbonComponent(new JRibbonComponent(new EmptyResizableIcon(32), "", fonts_size_box));
-        /**---- Finished Assigning the Texture Controls ----**/
-
-        /**---- Assigning the Button Gallery ----**/
-        button_gallery_band = new JRibbonBand("Button Gallery", new EmptyResizableIcon(32));
+increaseSplash();
         java.util.List<StringValuePair<java.util.List<JCommandToggleButton>>> button_galleryButtons = new ArrayList<StringValuePair<java.util.List<JCommandToggleButton>>>();
 	java.util.List<JCommandToggleButton> button_galleryButtonsList = new ArrayList<JCommandToggleButton>();
+increaseSplash();
         for (int j = 0; j < buttons_list.size(); j++){
             button_galleryButtonsList.add(this.button_buttons[j]);
         }
+increaseSplash();
+        galleryButtons.add(new StringValuePair<java.util.List<JCommandToggleButton>>("Group " , galleryButtonsList));
+        band.addRibbonGallery(GALLERY_NAME, galleryButtons, visibleButtonCounts, 6, 4, RibbonElementPriority.TOP);
+increaseSplash();
         button_galleryButtons.add(new StringValuePair<java.util.List<JCommandToggleButton>>("Button Group" , button_galleryButtonsList));
         button_gallery_band.addRibbonGallery(BUTTON_GALLERY_NAME, button_galleryButtons, visibleButtonCounts, 6, 4, RibbonElementPriority.TOP);
-        /**---- Finished Assigning the Button Gallery ----**/
-
-        /**---- Assigning the Pattern Controls ----**/
-        pattern_controls_band = new JRibbonBand("Pattern Controls", new EmptyResizableIcon(32));
-        JCommandButton test_button = new JCommandButton("test", new EmptyResizableIcon(32));
-        test_button.addActionListener(this);
-        pattern_controls_band.addCommandButton(test_button, RibbonElementPriority.MEDIUM);
-        pattern_controls_band.setResizePolicies(CoreRibbonResizePolicies.getCorePoliciesRestrictive(texture_gallery_band));
-        /**---- Finished Assigning the Pattern Controls ----**/
-
-        /**---- Assigning the Pattern Gallery ----**/
-        pattern_gallery_band = new JRibbonBand("Pattern Gallery", new EmptyResizableIcon(32));
-        java.util.List<StringValuePair<java.util.List<JCommandToggleButton>>> pattern_gallery_Buttons = new ArrayList<StringValuePair<java.util.List<JCommandToggleButton>>>();
-	java.util.List<JCommandToggleButton> pattern_gallery_Buttons_List = new ArrayList<JCommandToggleButton>();
-        for (int j = 0; j < pattern_list.size(); j++){
-            pattern_gallery_Buttons_List.add(this.pattern_buttons[j]);
-        }
-        pattern_gallery_Buttons.add(new StringValuePair<java.util.List<JCommandToggleButton>>("Pattern Group" , pattern_gallery_Buttons_List));
-        pattern_gallery_band.addRibbonGallery(PATTERN_GALLERY_NAME, pattern_gallery_Buttons, visibleButtonCounts, 6, 4, RibbonElementPriority.TOP);
-        /**---- Finished Assigning the Pattern Gallery ----**/
-        
-        texture_controls_band.setResizePolicies(CoreRibbonResizePolicies.getCorePoliciesRestrictive(texture_gallery_band));
-        gallery = texture_gallery_band.getControlPanel().getRibbonGallery(GALLERY_NAME);
-
-        this.getRibbon().addTask(new RibbonTask("Texture", texture_controls_band, texture_gallery_band));
-        this.getRibbon().addTask(new RibbonTask("Dress Form", dress_form_controls_band));
-        this.getRibbon().addTask(new RibbonTask("Buttons", buttons_controls_band, button_gallery_band));
-        this.getRibbon().addTask(new RibbonTask("Patterns", pattern_controls_band, pattern_gallery_band));
-        this.getRibbon().addTask(new RibbonTask("Text", text_controls_band, text_entry_band, text_resize_band));
-
+increaseSplash();
+        JCommandButton import_bt = new JCommandButton("Import");
+        import_bt.addActionListener(this);
+increaseSplash();
+        JCommandButton print = new JCommandButton("Print");
+        print.addActionListener(this);
+increaseSplash();
+        button_band.addCommandButton(print, RibbonElementPriority.MEDIUM);
+increaseSplash();
+        button_band.addCommandButton(import_bt, RibbonElementPriority.MEDIUM);
+        button_band.addCommandButton(new JCommandButton("Fill", new EmptyResizableIcon(32)),
+        RibbonElementPriority.MEDIUM);
+increaseSplash();
+        button_band.addCommandButton(new JCommandButton("Import", new EmptyResizableIcon(32)),
+        RibbonElementPriority.MEDIUM);
+        button_band.setResizePolicies(CoreRibbonResizePolicies.getCorePoliciesRestrictive(band));
+increaseSplash();
+        JCommandButton import_img = new JCommandButton("Import Guide Image", new EmptyResizableIcon(32));
+        import_img.addActionListener(this);
+increaseSplash();
+        JCommandButton import_button = new JCommandButton("Import Button", new EmptyResizableIcon(32));
+        import_button.addActionListener(this);
+increaseSplash();
+splashText("Loading dress form controls");
+        dress_form_button_band.addCommandButton(import_img, RibbonElementPriority.MEDIUM);
+        dress_form_button_band.addCommandButton(new JCommandButton("test2", new EmptyResizableIcon(32)),
+        RibbonElementPriority.MEDIUM);
+increaseSplash();
+        dress_form_button_band.addCommandButton(new JCommandButton("test3", new EmptyResizableIcon(32)),
+        RibbonElementPriority.MEDIUM);
+increaseSplash();
+        dress_form_button_band.setResizePolicies(CoreRibbonResizePolicies.getCorePoliciesRestrictive(band));
+        buttons_button_band.setResizePolicies(CoreRibbonResizePolicies.getCorePoliciesRestrictive(band));
+increaseSplash();
+//        JCommandButton import_button = new JCommandButton("Import Button", new EmptyResizableIcon(32));
+//        import_img.addActionListener(this);
+        buttons_button_band.addCommandButton(import_button, RibbonElementPriority.MEDIUM);
+increaseSplash();
+        gallery = band.getControlPanel().getRibbonGallery(GALLERY_NAME);
+        this.getRibbon().addTask(new RibbonTask("Texture", button_band, band));
+increaseSplash();
+        this.getRibbon().addTask(new RibbonTask("Dress Form", dress_form_button_band));
+        this.getRibbon().addTask(new RibbonTask("Buttons", buttons_button_band, button_gallery_band));
+increaseSplash();
         dim = Toolkit.getDefaultToolkit().getScreenSize();
         dbf = new DrawingBoardFooter(svgF);
         bordfooter = dbf.getDrawingBoardFooter();
-        increaseSplash();
-
+increaseSplash();
         desk = new JDesktopPane();
         iframe = new JInternalFrame("Drawing Board", true, true, true, true);
         iframe.setIconifiable(false);
-        increaseSplash();
-
+increaseSplash();
         iframe.setToolTipText("Your drawings go here");
+        
         iframe.setBounds(0, 0, dim.width-400, dim.height-200);
         iframe.setVisible(true);
-        increaseSplash();
-
-        splashText("Loading the alter station");
-
+increaseSplash();
+splashText("Loading the alter station");
+                                
         alt = new alterStation();
-
-        splashText("Loading the tool board");
+splashText("Loading the tool board");
         toolframe = new JInternalFrame("Tool Board", true, true, true, true);
         toolframe.setToolTipText("Drawing tools");
 increaseSplash();
@@ -513,22 +413,21 @@ splashText("Loading the paint board");
         pb = new paintBoard();
 increaseSplash();
 splashText("Initializing drawing canvases");
-        svgF = new SVGConjurer(dim, alt, dbf, "front");
-        svgR = new SVGConjurer(dim, alt, dbf, "rear");
+        svgF = new SVGConjurer(dim, alt, dbf);
+        svgR = new SVGConjurer(dim, alt, dbf);
         svgF.rt = this;
         svgR.rt = this;
         dbf.svgc = svgF;
-        selectedSVGC = svgF;
 
 increaseSplash();
-
+        
         alt.svgc = svgF;
 increaseSplash();
         alt.rt = this;
         pb.alt = alt;
         pb.nv = nv;
 increaseSplash();
-        tb = new toolbox(svgF, this);
+        tb = new toolbox(svgF);
         toolframe.add(tb.getToolbox());
 splashText("Loading the color palette");
         colorChooser = new JColorChooser();
@@ -595,7 +494,6 @@ increaseSplash();
         //        iframe.add(drawingScrollPane);
         drawing_board_tabbs.addTab("Front View", frontDrawingScrollPane);
         drawing_board_tabbs.addTab("Rear View", rearDrawingScrollPane);
-        drawing_board_tabbs.addChangeListener(this);
 increaseSplash();
 splashText("Loading the drawing board footer");
         iframe.add(bordfooter, BorderLayout.SOUTH);
@@ -607,17 +505,17 @@ increaseSplash();
         Container color_container = color_dock.getContentPane();
         color_container.add(new JScrollPane(colorChooser));
 increaseSplash();
-
+        
         alter_dock.setTitleText("Alter Station");
         Container alter_container = alter_dock.getContentPane();
         alter_container.add(new JScrollPane(alt.getAlterStation()));
 increaseSplash();
-
+        
         navigator_dock.setTitleText("Navigator");
         Container navigator_container = navigator_dock.getContentPane();
 //        navigator_container.add(new JScrollPane(nv.getNavigator()));
 increaseSplash();
-
+        
         control_dock.setTitleText("Control Panel");
         Container control_container = control_dock.getContentPane();
         control_container.add(new JScrollPane(ctrlp.getControlPanel()));
@@ -644,8 +542,6 @@ increaseSplash();
 splashText("Setting the screen........");
         this.setSize(dim);
         this.setVisible(true);
-        File e = new File("Temp");
-        e.mkdir();
 splashText("OK");
 
 increaseSplash();
@@ -656,56 +552,23 @@ increaseSplash();
     }
 
     public void stateChanged(ChangeEvent e) {
-        try{
-            JTabbedPane jtp = (JTabbedPane)e.getSource();
-            if(jtp.getSelectedIndex()==1){
-                tb.svgc = svgR;
-                ctrlp.svgc = svgR;
-                selectedSVGC = svgR;
-            }
-            else{
-                tb.svgc = svgF;
-                ctrlp.svgc = svgF;
-                selectedSVGC = svgF;
-            }
-        }
-        catch(Exception ex1){
-            System.out.println("In the Ribbon Test: "+ex1);
-        }
-        selectedSVGC.testTextColor(colorChooser.getColor());
+        svgF.color = colorChooser.getColor();
+        svgR.color = colorChooser.getColor();
       }
+
+/*    public void addFabric(String new_fabric[]){
+//        System.out.println("addFabric(String new_fabric[]) Called");
+        Fabric fabric = new Fabric(new_fabric[0], new_fabric[1], new_fabric[2], new_fabric[3], new_fabric[4]);
+        addFabric(fabric);
+    }*/
+
+/*    public void addButton(String new_button[]){
+//        System.out.println("addButton(String new_button[]) Called");
+        button btn = new button(new_button[0], new_button[1], new_button[2], new_button[3], new_button[4]);
+        addButton(btn);
+    }*/
+
     public void actionPerformed(ActionEvent ae){
-
-        try{
-            if(ae.getActionCommand().equals("comboBoxChanged")){
-                JComboBox jcb = (JComboBox)ae.getSource();
-                if(jcb.getName().equals("fonts box")){
-                    selectedSVGC.testText(jcb.getSelectedItem().toString());
-                    Font f = fnt[jcb.getSelectedIndex()];
-                    return;
-                }
-                else if(jcb.getName().equals("font size")){
-                    selectedSVGC.setTextSize(jcb.getSelectedIndex());
-                    return;
-                }
-                
-            }
-        }
-        catch(Exception ee){
-            System.out.print("ribbon test ActionPerformed Exception");
-        }
-
-        try{
-            JButton jb = (JButton)ae.getSource();
-            if(jb.getName().equals("edit path")){
-                selectedSVGC.editTextPath(WIDTH);
-                return;
-            }
-        }
-        catch(Exception ex){
-
-        }
-        
         try{
         JCommandButton jcb = (JCommandButton)ae.getSource();
 
@@ -729,11 +592,6 @@ increaseSplash();
             String new_button[] = new String[5];
             ImportScreen imp_scr = new ImportScreen(this, "Button", new_button);
         }
-
-        else if(jcb.getText().equals("Import Pattern")){
-            String new_button[] = new String[5];
-            ImportScreen imp_scr = new ImportScreen(this, "Button", new_button);
-        }
         else if(jcb.getText().equals("New Project")){
 //            patternObject po = new patternObject();
             try{
@@ -742,17 +600,14 @@ increaseSplash();
             catch(Exception ex){
                 System.out.println("Project close Exception");
             }
-
             setBoards();
-            project_obj = new projectObject(svgF.document, svgR.document);
+            projectObject po = new projectObject(svgF.document, svgR.document);
 
-            treeHandler th = new treeHandler(project_obj, this, svgF);
+            treeHandler th = new treeHandler(po, this, svgF);
             navigator_container = navigator_dock.getContentPane();
             navigator_container.add(new JScrollPane(th.getTree()));
-            svgF.project_object = project_obj;
-            svgR.project_object = project_obj;
+            svgF.project_object = po;
             svgF.th = th;
-            svgR.th = th;
             amEntrySave.setEnabled(true);
             amEntryClose.setEnabled(true);
         }
@@ -762,7 +617,7 @@ increaseSplash();
             }
             catch(Exception e){
                 System.out.println("Project save exception: "+e);
-            }
+            }            
         }
 
         else if(jcb.getText().equals("Open Project")){
@@ -792,43 +647,16 @@ increaseSplash();
             System.out.println("The name is "+jtb.getName());
             String tmp[] = jtb.getText().split("\\s");
 
-            if(jtb.getName().contains("fabric")){
-                String[] bt_txt = jtb.getName().split(" ");
-                int bt_num = Integer.parseInt(bt_txt[bt_txt.length-1]);
-
-                ImageRelations2 ir = new ImageRelations2(fabrics_list.get(bt_num).getFabricMainImage(), fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricNameLong());
-                selectedSVGC.fillUri = ir.getUri();
-                selectedSVGC.fillPatternByURI();
+            if(jtb.getName().equals("fabric")){
+                System.out.println("A fabrics button is pressed.:"+jtb.getParent().getComponentZOrder(jtb));
+//                svgF.fillUri = fabrics_list.get(Integer.parseInt(tmp[1])).getFabricMainImage().toString();
+                svgF.fill_image = fabrics_list.get(jtb.getParent().getComponentZOrder(jtb)).getFabricMainImage();
+                svgF.fillPattern();
+//                System.out.println(svgF.fillUri.toString());
             }
-            else if(jtb.getName().contains("button")){
-                String[] bt_txt = jtb.getName().split(" ");
-                int bt_num = Integer.parseInt(bt_txt[bt_txt.length-1]);
-
-                svgF.setButton(buttons_list.get(bt_num).getFabricMainImage());
+            else if(jtb.getName().equals("button")){
+                svgF.setButton(buttons_list.get(Integer.parseInt(tmp[1])).getFabricMainImage());
             }
-            else if(jtb.getName().contains("pattern")){
-                System.out.println("Pattern pressed");
-                String[] bt_txt = jtb.getName().split(" ");
-                int bt_num = Integer.parseInt(bt_txt[bt_txt.length-1]);
-
-                readPattern(pattern_list.get(bt_num).ptrn);
-            }
-        }
-    }
-
-    public void keyReleased(KeyEvent e) {
-        if(text_type_area.hasFocus()){
-            selectedSVGC.testSetText(text_type_area.getText());
-        }
-    }
-    public void keyPressed(KeyEvent e) {
-        if(text_type_area.hasFocus()){
-            selectedSVGC.testSetText(text_type_area.getText());
-        }
-    }
-    public void keyTyped(KeyEvent e) {
-        if(text_type_area.hasFocus()){
-            selectedSVGC.testSetText(text_type_area.getText());
         }
     }
 
@@ -854,28 +682,10 @@ increaseSplash();
                 svgF.document.getFirstChild().removeChild(deletion_nodes.get(i));
             }
 
-            nl = svgR.document.getFirstChild().getChildNodes();
-            deletion_nodes = new ArrayList();
-            for(int i = 0; i < nl.getLength(); i++){
-                System.out.println("Element "+i+": "+((Element)nl.item(i)).getTagName()+" : "+((Element)nl.item(i)).getAttribute("id"));
-
-                if(!(((Element)nl.item(i)).getAttribute("id").equals("axis_X")||((Element)nl.item(i)).getAttribute("id").equals("axis_Y"))){
-                    System.out.println("To be removed:: "+"Element "+i+": "+((Element)nl.item(i)).getTagName()+" : "+((Element)nl.item(i)).getAttribute("id"));
-                    deletion_nodes.add(nl.item(i));
-                }
-            }
-
-            for(int i = 0; i < deletion_nodes.size(); i++){
-                svgR.document.getFirstChild().removeChild(deletion_nodes.get(i));
-            }
-
             navigator_container.removeAll();
             svgF.project_object = null;
-            svgR.project_object = null;
             svgF.th = null;
-            svgR.th = null;
             svgF.refresh();
-            svgR.refresh();
             setVisible(true);
     }
 
@@ -919,7 +729,7 @@ increaseSplash();
         JCommandToggleButton jtb  = new JCommandToggleButton("Texture "  + fabrics_list.size(), dri);
         jtb.setName("fabric");
         jtb.addActionListener(this);
-        texture_gallery_band.addRibbonGalleryButtons(GALLERY_NAME, "Group ", jtb);
+        band.addRibbonGalleryButtons(GALLERY_NAME, "Group ", jtb);
     }
 
     public void addButton(Fabric button){
@@ -944,26 +754,6 @@ increaseSplash();
         button_gallery_band.addRibbonGalleryButtons(BUTTON_GALLERY_NAME, "Button Group", jtb);
     }
 
-    public void addPattern(patternPackage pp){
-        pattern_list.add(pp);
-        fileWriter("pattern");
-
-        try{
-            image = pp.getPatternFrontImage();
-        }
-
-        catch(Exception e){
-            System.out.println("RibbonTest class addPattern(pp) Creating image from pp error: "+e);
-        }
-
-        DecoratedResizableIcon dri = new DecoratedResizableIcon(new DisabledResizableIcon(RibbonElementPriority.TOP, 52, 52), new IconImageDecoration(image), new BottomRightDecoration(3));
-        JCommandToggleButton jtb  = new JCommandToggleButton("pattern "  + pattern_list.size(), dri);
-        jtb.setName("pattern");
-        jtb.addActionListener(this);
-        pattern_gallery_band.addRibbonGalleryButtons(GALLERY_NAME, "Group ", jtb);
-        System.out.println("Pattern added to the gallery");
-    }
-
     public void fileWriter(String file){
     try{
         if(file.equals("fabric")){
@@ -977,13 +767,6 @@ increaseSplash();
             objOut.writeObject(buttons_list);
             objOut.close();
         }
-
-        else if(file.equals("pattern")){
-            ObjectOutputStream objOut = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream("patterns.dat")));
-            objOut.writeObject(pattern_list);
-            objOut.close();
-            System.out.println("Pattern written");
-        }
     }
 
     catch(Exception e){
@@ -993,9 +776,9 @@ increaseSplash();
 
 public void projectReader(){
     project p = null;
-    project_obj = new projectObject();
+    projectObject project_obj = new projectObject();
 /************************/
-    FileFilter projectfilter = new FileNameExtensionFilter("Temporary project format (.lld)", "lld");
+FileFilter projectfilter = new FileNameExtensionFilter("Temporary project format (.lld)", "lld");
     JFileChooser jfc = new JFileChooser();
     jfc.addChoosableFileFilter(projectfilter);
     jfc.setDialogTitle("Open Project File");
@@ -1003,6 +786,7 @@ public void projectReader(){
 //    System.out.println("The path is: "+file.getPath());
     int result = jfc.showOpenDialog(this);
 
+    System.out.println(jfc.getSelectedFile().getName());
     if(result == JFileChooser.CANCEL_OPTION) return;
     String[] path = StringUtils.split(jfc.getCurrentDirectory().getPath(), "\\");
 
@@ -1022,62 +806,25 @@ public void projectReader(){
     catch(Exception e){
         System.out.println("Project read Exception: "+ e);
     }
-
     Element root = svgF.document.getDocumentElement();
     Node defs = null;
-    Node defs2 = null;
     try {
       String parser = XMLResourceDescriptor.getXMLParserClassName();
       SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parser);
 //      System.out.println("p.defs is: "+p.defs);
       defs = DOMUtilities.parseXML(p.defs, svgF.document,svgF.canvas.getURI(), null, null,f);
-      defs2 = DOMUtilities.parseXML(p.defs, svgR.document,svgR.canvas.getURI(), null, null,f);
     }
     catch( Exception ex ){
         ex.printStackTrace();
     }
 
     try{
-//        Element e = svgF.document.createElement("svg");
-//        Element e2 = svgR.document.createElement("svg");
+        Element e = svgF.document.createElement("svg");
 //        e.appendChild(defs);
         root.appendChild(defs.getFirstChild());
-        svgR.document.getDocumentElement().appendChild(defs2.getFirstChild());
     }
     catch(Exception ee){
         System.out.append("ee error: "+ee);
-    }
-
-    for(int i = 0; i < p.patterns.size(); i++){
-    for(int j = 0; j < p.patterns.get(i).fills.size(); j++){
-        inner: for(int x = 0; x < fabrics_list.size(); x++){
-            if(fabrics_list.get(x).getFabricNameLong().equals(p.patterns.get(i).fills.get(j))){
-                ImageRelations2 ir = new ImageRelations2(fabrics_list.get(x).getFabricMainImage(), fabrics_list.get(x).getFabricNameLong());
-                break inner;
-            }
-        }
-    }
-}
-    for(int i = 0; i < p.history_elements.size(); i++){
-        String parser = XMLResourceDescriptor.getXMLParserClassName();
-        SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parser);
-        try{
-            Node ef = null;
-            try{
-                System.out.println("Creating node is "+p.history_elements.get(i));
-                ef = DOMUtilities.parseXML(p.history_elements.get(i), svgF.document,svgF.canvas.getURI(), null, null,f);
-            }
-            catch(Exception ee){
-                System.out.println("History element Read exception is: "+ee);
-            }
-            Element el = svgF.document.createElement("svg");
-            el.appendChild(ef);
-            project_obj.history_elements.add((Element)el.getFirstChild().getFirstChild().cloneNode(true));
-            System.out.println("I think the element is successfully added.");
-        }
-        catch(Exception ex){
-            System.out.println("History elements reading in error: "+ex);
-        }
     }
 
     for(int i = 0; i < p.patterns.size(); i++){
@@ -1087,40 +834,19 @@ public void projectReader(){
         SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parser);
 
         try {
-            Node ef = null;
-            Node er = null;
-            try{
-                System.out.println("The mentioning string is in: "+p.patterns.get(i).front);
-                ef = DOMUtilities.parseXML(p.patterns.get(i).front, svgF.document,svgF.canvas.getURI(), null, null,f);
-                er = DOMUtilities.parseXML(p.patterns.get(i).rear, svgR.document,svgR.canvas.getURI(), null, null,f);
-            }
-            catch(Exception ee){
-                System.out.println("Read exception is: "+ee);
-            }
+            System.out.println(p.patterns.get(i).front);
+            Node ef = DOMUtilities.parseXML(p.patterns.get(i).front, svgF.document,svgF.canvas.getURI(), null, null,f);
+
             Element el = svgF.document.createElement("svg");
             el.appendChild(ef);
-            Element em = svgR.document.createElement("svg");
-            em.appendChild(er);
 
             ptrn.front = el;
-            ptrn.rear = em;
             Element element1 = (Element)ptrn.front.getFirstChild();
-            Element element2 = (Element)ptrn.rear.getFirstChild();
             ptrn.front = null;
-            ptrn.rear = null;
-            ptrn.front = element1;
-            ptrn.rear = element2;
+            ptrn.front = element1;            
 
-            try{
-                root.appendChild(ptrn.front);
-            }
-            catch(Exception ex1){
-                System.out.println("front appending error: "+ex1);
-            }
-            
-            svgR.document.getDocumentElement().appendChild(ptrn.rear);
+            root.appendChild(ptrn.front);
             svgF.elementIterator(ptrn.front);
-            svgR.elementIterator(ptrn.rear);
         }
 
         catch(Exception ex){
@@ -1134,6 +860,7 @@ public void projectReader(){
             System.out.println("The exception: "+e);
         }
     }
+
     treeHandler th = new treeHandler(project_obj, this, svgF);
 
     navigator_container = navigator_dock.getContentPane();
@@ -1143,99 +870,20 @@ public void projectReader(){
     setVisible(true);
     setBoards();
     svgF.refresh();
-    svgR.refresh();
-}
-
-private void readPattern(pattern p){
-    patternObject ptrn = new patternObject();
-    ptrn.pattern_name = p.pattern_name;
-    String parser = XMLResourceDescriptor.getXMLParserClassName();
-    SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parser);
-
-    try{
-        Node ef = null;
-        Node er = null;
-        try{
-            ef = DOMUtilities.parseXML(p.front, svgF.document,svgF.canvas.getURI(), null, null,f);
-            er = DOMUtilities.parseXML(p.rear, svgR.document,svgR.canvas.getURI(), null, null,f);
-        }
-        catch(Exception ee){
-            System.out.println("1034 Read exception is: "+ee);
-        }
-
-        Element el = svgF.document.createElement("svg");
-        el.appendChild(ef);
-        Element em = svgR.document.createElement("svg");
-        em.appendChild(er);
-        ptrn.front = el;
-        ptrn.rear = em;
-        Element element1 = (Element)ptrn.front.getFirstChild();
-        Element element2 = (Element)ptrn.rear.getFirstChild();
-        ptrn.front = null;
-        ptrn.front = element1;
-        ptrn.rear = null;
-        ptrn.rear = element2;
-        Element root = svgF.document.getDocumentElement();
-        root.appendChild(ptrn.front);
-        svgR.document.getDocumentElement().appendChild(ptrn.rear);
-        svgF.elementIterator(ptrn.front);
-        svgR.elementIterator(ptrn.rear);
-    }
-
-    catch(Exception ex){
-        System.out.println("982 Project reader pattern creation error: "+ex);
-    }
-    try{
-        project_obj.addPatternObject(ptrn);
-    }
-    catch(Exception e){
-        System.out.println("The exception: "+e);
-    }
-
-    treeHandler th = new treeHandler(project_obj, this, svgF);
-
-    navigator_container = navigator_dock.getContentPane();
-    navigator_container.add(new JScrollPane(th.getTree()));
-    svgF.project_object = project_obj;
-    svgF.project_object = project_obj;
-    svgF.th = th;
-    svgR.th = th;
-    setVisible(true);
-    setBoards();
-    svgF.refresh();
-    svgR.refresh();
 }
 
 public void projectWriter(projectObject po){
+    
     project p = new project();
+    CharArrayWriter tmp_character_array = new CharArrayWriter();
 
     for(int i = 0; i < po.patterns.size(); i++){
         pattern pt = new pattern();
-
-        for(int j = 0; j < po.patterns.get(i).associated_fabrics.size(); j++){
-        try{
-//            System.out.println(po.associated_fabrics.get(i).fill_uri);
-            File f = new File(new URI(po.patterns.get(i).associated_fabrics.get(j).fill_uri));
-
-            for(int x = 0; x < fabrics_list.size(); x++){
-                if(fabrics_list.get(x).getFabricNameLong().equals(f.getAbsoluteFile().getName())){
-                    System.out.println("Relevant fabric found at index: "+x);
-                    pt.fills.add(fabrics_list.get(x).getFabricNameLong());
-                }
-            }
-        }
-        catch(Exception e3){
-            System.out.println("The exception in ribbon test");
-        }
-    }
-        CharArrayWriter tmp_character_array = new CharArrayWriter();
-        CharArrayWriter tmp_character_array2 = new CharArrayWriter();
         pt.pattern_name = po.patterns.get(i).pattern_name;
+
         try{
             DOMUtilities.writeNode(po.patterns.get(i).front, tmp_character_array);
             pt.front = tmp_character_array.toString();
-            DOMUtilities.writeNode(po.patterns.get(i).rear, tmp_character_array2);
-            pt.rear = tmp_character_array2.toString();
         }
 
         catch(Exception e){
@@ -1243,15 +891,13 @@ public void projectWriter(projectObject po){
         }
         p.patterns.add(pt);
     }
-
-    System.out.println("2");
+    System.out.println("OK");
 
     CharArrayWriter defs = new CharArrayWriter();
     Element defs_wrapper = svgF.document.createElementNS(SVGDOMImplementation.SVG_NAMESPACE_URI, "svg");
 //    defs_wrapper.appendChild(svgF.document.getDocumentElement().getElementsByTagName("defs").item(0));
     NodeList nl = svgF.document.getElementsByTagName("defs");
     Element pattern_defs = null;
-System.out.println("3");
     for(int i = 0; i < nl.getLength(); i++){
         if(((Element)nl.item(i)).getAttribute("id").equals("pattern_defs")){
             System.out.println("Pattern defs found in the project writer");
@@ -1259,7 +905,7 @@ System.out.println("3");
         }
     }
     defs_wrapper.appendChild(pattern_defs.cloneNode(true));
-System.out.println("3");
+
     try{
         DOMUtilities.writeNode(defs_wrapper, defs);
     }
@@ -1267,10 +913,10 @@ System.out.println("3");
     catch(Exception e){
         System.out.println("Defs creation exception: "+e);
     }
-System.out.println("4");
+
     p.defs = defs.toString();
     CharArrayWriter out = new CharArrayWriter();
-System.out.println("5");
+
     try{
         DOMUtilities.writeDocument(svgF.document, out);
     }
@@ -1278,20 +924,7 @@ System.out.println("5");
     catch(Exception e){
         System.out.println("projectWriter exception: "+e);
     }
-    System.out.println("Before history repetition");
-    CharArrayWriter history_string = new CharArrayWriter();
-    for(int x = 0; x < po.history_elements.size(); x++){
-        try{
-            Element wrap = svgF.document.createElementNS(SVGDOMImplementation.SVG_NAMESPACE_URI, "svg");
-            wrap.appendChild(po.history_elements.get(x));
-            DOMUtilities.writeNode(wrap, history_string);
-            p.history_elements.add(history_string.toString());
-        }
-        catch(Exception e){
-            System.out.println("projectWriter exception: "+e);
-        }
-    }
-    System.out.println("After history repetition");
+
     FileFilter projectfilter = new FileNameExtensionFilter("Temporary project format (.lld)", "lld");
     JFileChooser jfc = new JFileChooser();
     jfc.addChoosableFileFilter(projectfilter);
@@ -1301,14 +934,17 @@ System.out.println("5");
     File name_file = new File(po.project_name);
     jfc.setSelectedFile(name_file);
     int result = jfc.showSaveDialog(this);
+
     System.out.println(jfc.getSelectedFile().getName());
     if(result == JFileChooser.CANCEL_OPTION) return;
     String[] path = StringUtils.split(jfc.getCurrentDirectory().getPath(), "\\");
+
     String qualified_path = path[0];
     for(int i = 1; i < path.length; i++){
         qualified_path = qualified_path+"//" + path[i];
     }
     System.out.println("Written path is"+qualified_path+"//"+jfc.getSelectedFile().getName());
+
     try{
         ObjectOutputStream objOut = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(qualified_path+"///"+jfc.getSelectedFile().getName()+".lld")));
         objOut.writeObject(p);
@@ -1318,35 +954,6 @@ System.out.println("5");
 
     catch(Exception e){
         System.out.println("Line 701: Exception "+e);
-    }
-}
-
-public int[] imageToArray(Image image){
-    int width = image.getWidth(null);
-        int height = image.getHeight(null);
-        int[] fabric_array = new int[width*height];
-
-        PixelGrabber pg = new PixelGrabber(image, 0, 0, width, height, fabric_array, 0, width);
-
-        try{
-            pg.grabPixels();
-        }
-        catch(Exception e){
-            System.out.println("Fabric.java pixelgrabber error: "+e);
-        }
-        return fabric_array;
-}
-
-public void imageWriterTester(int[] p){
-    try{
-        ObjectOutputStream objOut = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream("Image "+".test")));
-        objOut.writeObject(p);
-        objOut.close();
-        System.out.println("project written");
-    }
-
-    catch(Exception e){
-        System.out.println("BufferdImage writing problem: "+e);
     }
 }
 
@@ -1386,6 +993,7 @@ public void imageWriterTester(int[] p){
         }
     }
     private static void appInit(){
+        System.out.println("Came to the App");
         SwingUtilities.invokeLater(new Runnable(){
             public void run(){
                 try{
@@ -1400,6 +1008,15 @@ public void imageWriterTester(int[] p){
         });
         splashGraphics.setPaint(Color.WHITE);
         splashText("Initializing session modules...");
+        System.out.println("Finished AppInit");
+        try{
+            Thread.sleep(200000);
+        }
+        catch(Exception e){
+
+        }
+
+        System.out.println("Finished AppInit");
     }
 
     public static void splashText(String str)
@@ -1485,5 +1102,6 @@ public static void main(String args[])throws Exception{
 
     splashInit();
     appInit();
+    System.out.println("Came here");
 }
 }
