@@ -15,7 +15,6 @@ public class UndoableDrawingNumberIncrease extends AbstractUndoableEdit{
 
     public UndoableDrawingNumberIncrease(SVGConjurer svgc){
         this.svgc = svgc;
-        System.out.println("Came into the UndoableDrawingNumberIncrease");
         svgc.drawing_number = svgc.drawing_number+1;
     }
 
@@ -25,13 +24,11 @@ public class UndoableDrawingNumberIncrease extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
-        System.out.println("Came into the UndoableDrawingNumberIncrease redo");
         svgc.drawing_number = svgc.drawing_number+1;
     }
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("Came into the UndoableDrawingNumberIncrease undo");
         svgc.drawing_number = svgc.drawing_number-1;
     }
 }

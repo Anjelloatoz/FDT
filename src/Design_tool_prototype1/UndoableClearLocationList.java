@@ -15,7 +15,6 @@ public class UndoableClearLocationList extends AbstractUndoableEdit{
     List<Element> prev_elements_list = new ArrayList();
 
     public UndoableClearLocationList(List<Element> current_list){
-        System.out.println("Came into the UndoableClearElementList");
         this.current_elements_list = current_list;
         for(int i = 0; i < this.current_elements_list.size(); i++){
             this.prev_elements_list.add((Element)current_elements_list.get(i).cloneNode(true));
@@ -29,7 +28,6 @@ public class UndoableClearLocationList extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
-        System.out.println("Came into the UndoableClearLocationList redo");
         for(int i = 0; i < this.current_elements_list.size(); i++){
             this.prev_elements_list.add((Element)current_elements_list.get(i).cloneNode(true));
         }
@@ -38,7 +36,6 @@ public class UndoableClearLocationList extends AbstractUndoableEdit{
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("Came into the UndoableClearLocationList undo");
         for(int i = 0; i < this.prev_elements_list.size(); i++){
             this.current_elements_list.add(prev_elements_list.get(i));
         }

@@ -71,7 +71,7 @@ public class resizeHandler{
 
     public void tester(Document owner_document, Element box_holder, Element subject, Element subjectContainer, String svgNS, JSVGCanvas canvas){
         tmp_rect = SVGLocatableSupport.getBBox(subject);
-//        SVGRect test_rect = svgc.BoundryFinder4Resize((Element)subject.getParentNode().getParentNode(), null);
+        SVGRect test_rect = svgc.BoundryFinder4Resize((Element)subject.getParentNode().getParentNode(), null);
 
 //        System.out.println("tmp_rect width: "+tmp_rect.getWidth());
 //        System.out.println("test_rect width: "+test_rect.getWidth());

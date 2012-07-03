@@ -29,9 +29,10 @@ public class UndoableSetAttribute extends AbstractUndoableEdit{
         this.new_value = value;
 //        System.out.println("Came into the UndoableSetAttribute");
 
+        element.setAttribute(atrb, new_value);
         Runnable r = new Runnable(){
           public void run(){
-              element.setAttribute(atrb, new_value);
+              
           }
         };
         UpdateManager um = canvas.getUpdateManager();
@@ -44,7 +45,6 @@ public class UndoableSetAttribute extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
-        System.out.println("Came into the UndoableSetAttribute redo");
 
         Runnable r = new Runnable(){
           public void run(){
@@ -57,7 +57,6 @@ public class UndoableSetAttribute extends AbstractUndoableEdit{
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("Came into the UndoableSetAttribute undo");
 
         Runnable r = new Runnable(){
           public void run(){

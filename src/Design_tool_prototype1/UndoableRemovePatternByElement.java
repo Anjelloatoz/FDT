@@ -21,7 +21,6 @@ public class UndoableRemovePatternByElement extends AbstractUndoableEdit{
         this.project = project;
         this.tree_handler = th;
         this.ribbon = rt;
-        System.out.println("Came into the UndoableAddPatternObject");
         deleted_pattern = project.removePatternByElement(delete_element);
         tree_handler.refreshTree(project, ribbon);
     }
@@ -32,7 +31,6 @@ public class UndoableRemovePatternByElement extends AbstractUndoableEdit{
 
     public void redo() throws CannotRedoException{
         super.redo();
-        System.out.println("Came into the redo");
 
         deleted_pattern = project.removePatternByElement(delete_element);
         tree_handler.refreshTree(project, ribbon);
@@ -40,7 +38,6 @@ public class UndoableRemovePatternByElement extends AbstractUndoableEdit{
 
     public void undo() throws CannotUndoException{
         super.undo();
-        System.out.println("Came into the undo");
         project.addPatternObject(deleted_pattern);
         tree_handler.refreshTree(project, ribbon);
     }
